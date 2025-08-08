@@ -96,6 +96,19 @@ class LoveDiaryGame {
         }
     }
 
+    // 智能关闭弹窗 - 根据游戏状态决定导航
+    smartCloseModal(modalId) {
+        this.closeModal(modalId);
+        
+        // 如果游戏已经开始，关闭弹窗后应该回到时间线
+        if (this.gameState.player.name && modalId !== 'game-timeline-modal') {
+            // 延迟一点时间确保关闭动画完成
+            setTimeout(() => {
+                this.showModal('game-timeline-modal');
+            }, 100);
+        }
+    }
+
     // 游戏内通知系统
     showGameNotification(message, type = 'info', duration = 3000) {
         const notification = document.createElement('div');
@@ -498,7 +511,7 @@ class LoveDiaryGame {
     unlockAchievement(achievementId) {
         if (!this.gameState.achievements.includes(achievementId)) {
             this.gameState.achievements.push(achievementId);
-            const achievement = gameData.achievements.find(a => a.id === achievementId);
+            const achievement = gameData.achievements[achievementId];
             if (achievement) {
                 this.showAchievementNotification(achievement);
             }
@@ -557,7 +570,7 @@ class LoveDiaryGame {
         const container = document.getElementById('achievements-list');
         container.innerHTML = '';
         
-        gameData.achievements.forEach(achievement => {
+        Object.values(gameData.achievements).forEach(achievement => {
             const isUnlocked = this.gameState.achievements.includes(achievement.id);
             const achievementCard = document.createElement('div');
             achievementCard.style.cssText = `

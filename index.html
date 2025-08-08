@@ -139,7 +139,7 @@
     <!-- 读取存档弹窗 -->
     <div id="load-game-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('load-game-modal')">&times;</span>
+            <span class="modal-close" onclick="game.smartCloseModal('load-game-modal')">&times;</span>
             <h2>读取存档</h2>
             <div id="save-slots">
                 <!-- 存档槽位将由JavaScript动态生成 -->
@@ -150,7 +150,7 @@
     <!-- 成就系统弹窗 -->
     <div id="achievements-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('achievements-modal')">&times;</span>
+            <span class="modal-close" onclick="game.smartCloseModal('achievements-modal')">&times;</span>
             <h2>成就系统</h2>
             <div id="achievements-list">
                 <!-- 成就列表将由JavaScript动态生成 -->
@@ -161,7 +161,7 @@
     <!-- 回忆相册弹窗 -->
     <div id="gallery-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('gallery-modal')">&times;</span>
+            <span class="modal-close" onclick="game.smartCloseModal('gallery-modal')">&times;</span>
             <h2>回忆相册</h2>
             <div id="gallery-content">
                 <!-- 相册内容将由JavaScript动态生成 -->
@@ -172,7 +172,7 @@
     <!-- 设置弹窗 -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('settings-modal')">&times;</span>
+            <span class="modal-close" onclick="game.smartCloseModal('settings-modal')">&times;</span>
             <h2>游戏设置</h2>
             <div class="settings-container">
                 <div class="setting-item">
@@ -207,7 +207,7 @@
     <!-- 角色选择弹窗 -->
     <div id="character-selection-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('character-selection-modal')">&times;</span>
+            <span class="modal-close" onclick="game.smartCloseModal('character-selection-modal')">&times;</span>
             <h2>选择角色</h2>
             <div id="character-selection">
                 <!-- 角色选择将由JavaScript动态生成 -->
