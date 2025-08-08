@@ -215,13 +215,99 @@ class LoveDiaryGame {
         }
         
         this.selectedDay = day;
-        this.showCharacterSelection();
+        // 根据日期随机遇到角色，而不是让玩家选择
+        this.randomEncounter(day);
     }
 
-    showCharacterSelection() {
+    // 随机遇到角色系统
+    randomEncounter(day) {
+        // 根据不同日期有不同的遇到概率
+        const dayActivities = {
+            1: { type: '学习', characters: ['顾言', '江澈', '苏云深'] }, // 星期一：学习日
+            2: { type: '社交', characters: ['林舟', '唐言', '萧然'] },   // 星期二：社交日
+            3: { type: '休闲', characters: ['宋之南', '江澈', '苏云深'] }, // 星期三：休闲日
+            4: { type: '社交', characters: ['林舟', '周奕辰', '唐言'] }, // 星期四：社交日
+            5: { type: '学习', characters: ['顾言', '江澈', '萧然'] },   // 星期五：学习日
+            6: { type: '休闲', characters: ['宋之南', '周奕辰', '苏云深'] }, // 星期六：休闲日
+            7: { type: '偶遇', characters: ['顾言', '林舟', '宋之南', '周奕辰'] } // 星期日：偶遇日
+        };
+
+        const dayActivity = dayActivities[day];
+        const availableCharacters = dayActivity.characters;
+        
+        // 70% 概率遇到角色，30% 概率独自活动
+        const encounterChance = Math.random();
+        
+        if (encounterChance > 0.3 && availableCharacters.length > 0) {
+            // 随机选择一个角色
+            const randomCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+            this.interactWithCharacter(randomCharacter);
+        } else {
+            // 独自活动
+            this.soloActivity(dayActivity.type);
+        }
+    }
+
+    // 独自活动
+    soloActivity(activityType) {
+        const activities = {
+            '学习': {
+                title: '独自学习',
+                description: '你在图书馆度过了安静的学习时光，感觉收获很多。',
+                benefits: '学习能力有所提升！'
+            },
+            '社交': {
+                title: '社团活动',
+                description: '你参加了社团活动，虽然没有特别深入的交流，但度过了愉快的时光。',
+                benefits: '社交经验有所增加！'
+            },
+            '休闲': {
+                title: '放松时光',
+                description: '你享受了一段悠闲的个人时光，心情变得更加愉悦。',
+                benefits: '心情得到了很好的调节！'
+            },
+            '偶遇': {
+                title: '漫步校园',
+                description: '你在校园里漫步，虽然没有遇到特别的人，但欣赏了美丽的风景。',
+                benefits: '心境变得更加平和！'
+            }
+        };
+
+        const activity = activities[activityType];
+        
+        // 消耗行动点
+        this.gameState.actionPoints--;
+        
+        // 显示独自活动结果
+        this.showSoloActivityResult(activity);
+    }
+
+    showSoloActivityResult(activity) {
         this.closeModal('game-timeline-modal');
-        this.showModal('character-selection-modal');
-        this.loadCharacterSelection();
+        
+        const modalContent = document.getElementById('scenario-content');
+        modalContent.innerHTML = `
+            <div style="text-align: center;">
+                <div style="font-size: 60px; margin-bottom: 20px;">🌸</div>
+                <h3 style="color: #ff6b9d; margin-bottom: 15px;">${activity.title}</h3>
+                
+                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="line-height: 1.6; color: #555;">${activity.description}</p>
+                </div>
+                
+                <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <h4 style="color: #2e7d32; margin-bottom: 10px;">💫 收获</h4>
+                    <p style="color: #4caf50; margin: 5px 0;">${activity.benefits}</p>
+                </div>
+                
+                <div style="text-align: center;">
+                    <button onclick="game.continueGame()" style="margin-right: 10px;">继续游戏</button>
+                    <button onclick="game.returnToTimeline()">返回时间线</button>
+                </div>
+            </div>
+        `;
+        
+        this.showModal('scenario-modal');
     }
 
     loadCharacterSelection() {
@@ -383,14 +469,17 @@ class LoveDiaryGame {
     showSpecialEvent(title, description) {
         const modal = document.createElement('div');
         modal.className = 'modal active';
-        modal.style.zIndex = '2000';
+        modal.style.zIndex = '3500'; // 确保在其他弹窗之上
         modal.innerHTML = `
             <div class="modal-content" style="max-width: 400px;">
                 <span class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
                 <div style="text-align: center;">
                     <h3 style="color: #ff6b9d; margin-bottom: 20px;">${title}</h3>
                     <p style="line-height: 1.8; color: #555; margin-bottom: 20px;">${description}</p>
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()">继续</button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()" 
+                            style="background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 500;">
+                        继续
+                    </button>
                 </div>
             </div>
         `;
@@ -412,8 +501,14 @@ class LoveDiaryGame {
     }
 
     showWeekSummary() {
+        // 先关闭所有其他弹窗
+        document.querySelectorAll('.modal.active').forEach(modal => {
+            modal.classList.remove('active');
+        });
+        
         const modal = document.createElement('div');
         modal.className = 'modal active';
+        modal.style.zIndex = '3000';
         modal.innerHTML = `
             <div class="modal-content">
                 <div style="text-align: center;">
@@ -423,7 +518,8 @@ class LoveDiaryGame {
                         你与心仪的人们度过了美好的时光。
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
-                        <button onclick="this.parentElement.parentElement.parentElement.remove(); game.returnToTimeline();">
+                        <button onclick="game.startNextWeek(); this.parentElement.parentElement.parentElement.remove();" 
+                                style="background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 500;">
                             开始第${this.gameState.currentWeek}周
                         </button>
                     </div>
@@ -431,6 +527,14 @@ class LoveDiaryGame {
             </div>
         `;
         document.body.appendChild(modal);
+    }
+
+    // 开始下一周
+    startNextWeek() {
+        // 更新游戏界面
+        this.updateGameUI();
+        // 显示时间线
+        this.showModal('game-timeline-modal');
     }
 
     endGame() {
