@@ -358,8 +358,122 @@ class LoveDiaryGame {
     startGame(playerData) {
         this.gameState.player = playerData;
         this.closeModal('character-creation-modal');
-        this.showGameScreen();
-        this.updateGameUI();
+        
+        // 检查是否是新游戏，如果是则显示开场故事线
+        if (this.gameState.currentWeek === 1 && this.gameState.actionPoints === 5) {
+            this.showIntroStoryline();
+        } else {
+            this.showGameScreen();
+            this.updateGameUI();
+        }
+    }
+    
+    // 新手引导故事线
+    showIntroStoryline() {
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        if (titleElement) titleElement.textContent = '新的开始';
+        
+        if (descElement) {
+            descElement.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">🌸</div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #ff6b9d; margin-bottom: 15px;">欢迎来到心动日记！</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                            你是 <strong>${this.gameState.player.name}</strong>，一名${this.gameState.player.major}专业的大学生。
+                            性格${this.gameState.player.personality}的你，即将开始一段充满可能性的校园恋爱故事。
+                        </p>
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                            <p style="color: #1976d2; font-weight: 500; margin: 0;">
+                                💡 游戏玩法提示：<br>
+                                • 每周有5个行动点数<br>
+                                • 点击不同日期进行各种活动<br>
+                                • 通过互动提升与角色的好感度<br>
+                                • 你的选择将影响故事的发展
+                            </p>
+                        </div>
+                        <p style="line-height: 1.6; color: #555;">
+                            在这所美丽的大学里，你将会遇到各种各样有趣的人物：
+                            学霸顾言、阳光林舟、优雅宋之南、可爱周奕辰、才华江澈、
+                            温柔苏云深、强势唐言，还有神秘的萧然...
+                        </p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 设置选择按钮
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const startBtn = document.createElement('button');
+            startBtn.className = 'choice-btn';
+            startBtn.textContent = '开始我的校园生活！';
+            startBtn.style.background = 'linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)';
+            startBtn.addEventListener('click', () => {
+                this.closeModal('scenario-modal');
+                this.showGameScreen();
+                this.updateGameUI();
+                // 显示第一天的特殊引导
+                setTimeout(() => {
+                    this.showFirstDayGuide();
+                }, 1000);
+            });
+            
+            choicesElement.appendChild(startBtn);
+        }
+        
+        this.showModal('scenario-modal');
+    }
+    
+    // 第一天引导
+    showFirstDayGuide() {
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        if (titleElement) titleElement.textContent = '第一天的校园';
+        
+        if (descElement) {
+            descElement.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">🏫</div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                            今天是你在这所大学的第一天，阳光明媚，微风轻拂。
+                            校园里到处都是忙碌的学生，你可以选择不同的活动来度过这美好的一天。
+                        </p>
+                        <div style="background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); padding: 15px; border-radius: 8px;">
+                            <p style="color: #f57c00; font-weight: 500; margin: 0;">
+                                💫 小贴士：不同的日期对应不同的活动类型，<br>
+                                选择你感兴趣的日期开始你的故事吧！
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 设置选择按钮
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'choice-btn';
+            continueBtn.textContent = '了解，开始选择活动';
+            continueBtn.addEventListener('click', () => {
+                this.closeModal('scenario-modal');
+            });
+            
+            choicesElement.appendChild(continueBtn);
+        }
+        
+        this.showModal('scenario-modal');
     }
     
     showGameScreen() {
@@ -1238,10 +1352,22 @@ class LoveDiaryGame {
     }
 
     updateGameUI() {
-        document.getElementById('current-week').textContent = `第${this.gameState.currentWeek}周`;
-        document.getElementById('current-actions').textContent = this.gameState.actionPoints;
-        document.getElementById('player-info').textContent = 
+        // 更新桌面端UI
+        const currentWeekEl = document.getElementById('current-week');
+        const currentActionsEl = document.getElementById('current-actions');
+        const playerInfoEl = document.getElementById('player-info');
+        
+        if (currentWeekEl) currentWeekEl.textContent = `第${this.gameState.currentWeek}周`;
+        if (currentActionsEl) currentActionsEl.textContent = this.gameState.actionPoints;
+        if (playerInfoEl) playerInfoEl.textContent = 
             `${this.gameState.player.name} (${this.gameState.player.major} | ${this.gameState.player.personality})`;
+        
+        // 更新手机端UI
+        const mobileWeekEl = document.getElementById('mobile-current-week');
+        const mobileActionsEl = document.getElementById('mobile-current-actions');
+        
+        if (mobileWeekEl) mobileWeekEl.textContent = this.gameState.currentWeek;
+        if (mobileActionsEl) mobileActionsEl.textContent = this.gameState.actionPoints;
         
         // 更新日历显示
         document.querySelectorAll('.day-slot').forEach(slot => {
@@ -1263,35 +1389,80 @@ class LoveDiaryGame {
     }
     
     updateWeekStats() {
+        // 更新桌面端统计
         const studyCount = document.getElementById('study-count');
         const socialCount = document.getElementById('social-count');
         const leisureCount = document.getElementById('leisure-count');
         const encounterCount = document.getElementById('encounter-count');
         
-        // 这里可以根据实际的游戏数据来更新统计
-        if (studyCount) studyCount.textContent = this.gameState.weekStats?.study || 0;
-        if (socialCount) socialCount.textContent = this.gameState.weekStats?.social || 0;
-        if (leisureCount) leisureCount.textContent = this.gameState.weekStats?.leisure || 0;
-        if (encounterCount) encounterCount.textContent = this.gameState.weekStats?.encounter || 0;
+        // 更新手机端统计
+        const mobileStudyCount = document.getElementById('mobile-study-count');
+        const mobileSocialCount = document.getElementById('mobile-social-count');
+        const mobileLeisureCount = document.getElementById('mobile-leisure-count');
+        
+        const study = this.gameState.weekStats?.study || 0;
+        const social = this.gameState.weekStats?.social || 0;
+        const leisure = this.gameState.weekStats?.leisure || 0;
+        const encounter = this.gameState.weekStats?.encounter || 0;
+        
+        // 桌面端更新
+        if (studyCount) studyCount.textContent = study;
+        if (socialCount) socialCount.textContent = social;
+        if (leisureCount) leisureCount.textContent = leisure;
+        if (encounterCount) encounterCount.textContent = encounter;
+        
+        // 手机端更新
+        if (mobileStudyCount) mobileStudyCount.textContent = study;
+        if (mobileSocialCount) mobileSocialCount.textContent = social;
+        if (mobileLeisureCount) mobileLeisureCount.textContent = leisure;
     }
     
     updateAffectionStats() {
         const affectionContainer = document.getElementById('affection-stats');
-        if (!affectionContainer) return;
+        const mobileTopCharacter = document.getElementById('mobile-top-character');
         
-        let html = '';
-        Object.keys(this.gameState.characterRelationships).forEach(character => {
-            const affection = this.gameState.characterRelationships[character].affection;
-            if (affection > 0) {
-                html += `<div>${character}: ${affection}点</div>`;
+        // 桌面端更新
+        if (affectionContainer) {
+            let html = '';
+            Object.keys(this.gameState.characterRelationships).forEach(character => {
+                const affection = this.gameState.characterRelationships[character].affection;
+                if (affection > 0) {
+                    html += `<div>${character}: ${affection}点</div>`;
+                }
+            });
+            
+            if (html === '') {
+                html = '<div style="color: #6c757d;">暂无互动记录</div>';
             }
-        });
-        
-        if (html === '') {
-            html = '<div style="color: #6c757d;">暂无互动记录</div>';
+            
+            affectionContainer.innerHTML = html;
         }
         
-        affectionContainer.innerHTML = html;
+        // 手机端更新 - 显示好感度最高的角色
+        if (mobileTopCharacter) {
+            let topCharacter = null;
+            let maxAffection = 0;
+            
+            Object.keys(this.gameState.characterRelationships).forEach(character => {
+                const affection = this.gameState.characterRelationships[character].affection;
+                if (affection > maxAffection) {
+                    maxAffection = affection;
+                    topCharacter = character;
+                }
+            });
+            
+            if (topCharacter && maxAffection > 0) {
+                mobileTopCharacter.innerHTML = `
+                    <span>💕</span>
+                    <span>${topCharacter}${maxAffection}</span>
+                `;
+            } else {
+                mobileTopCharacter.innerHTML = `
+                    <span>💕</span>
+                    <span>好感度</span>
+                `;
+            }
+        }
     }
     
     checkNextWeekButton() {

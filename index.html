@@ -43,6 +43,39 @@
         
         <!-- 游戏主界面 -->
         <div id="game-screen" class="screen">
+            <!-- 手机端顶部状态栏 -->
+            <div class="mobile-top-bar">
+                <div class="mobile-stats-item">
+                    <span>📅</span>
+                    <span>第<span id="mobile-current-week">1</span>周</span>
+                </div>
+                <div class="mobile-stats-item">
+                    <span>⚡</span>
+                    <span><span id="mobile-current-actions">5</span>点行动力</span>
+                </div>
+                <div class="mobile-stats-item">
+                    <span>📚</span>
+                    <span>学习<span id="mobile-study-count">0</span></span>
+                </div>
+                <div class="mobile-stats-item">
+                    <span>💬</span>
+                    <span>社交<span id="mobile-social-count">0</span></span>
+                </div>
+                <div class="mobile-stats-item">
+                    <span>🎵</span>
+                    <span>休闲<span id="mobile-leisure-count">0</span></span>
+                </div>
+                <div class="mobile-stats-item" id="mobile-top-character">
+                    <span>💕</span>
+                    <span>好感度</span>
+                </div>
+            </div>
+            
+            <!-- 手机端设置按钮 -->
+            <button class="mobile-settings-btn" onclick="toggleMobileSettings()">
+                ⚙️
+            </button>
+            
             <div class="game-header">
                 <div class="game-title-bar">
                     <h2>心动日记 - 游戏进行中</h2>
@@ -267,6 +300,30 @@
         </div>
     </div>
 
+    <!-- 手机端设置弹窗 -->
+    <div id="mobile-settings-modal" class="mobile-settings-modal">
+        <div class="mobile-settings-content">
+            <h3 class="mobile-settings-title">游戏菜单</h3>
+            <div class="mobile-settings-buttons">
+                <button class="mobile-settings-btn-item btn-save" onclick="saveGame(); closeMobileSettings();">
+                    💾 保存游戏
+                </button>
+                <button class="mobile-settings-btn-item btn-settings" onclick="showModal('settings-modal'); closeMobileSettings();">
+                    ⚙️ 游戏设置
+                </button>
+                <button class="mobile-settings-btn-item btn-next" onclick="nextWeek(); closeMobileSettings();" id="mobile-next-week-btn" style="display: none;">
+                    ⏭️ 下一周
+                </button>
+                <button class="mobile-settings-btn-item btn-menu" onclick="returnToMenu(); closeMobileSettings();">
+                    🏠 返回主菜单
+                </button>
+                <button class="mobile-settings-btn-item" onclick="closeMobileSettings();" style="background: #6c757d; color: white;">
+                    ❌ 关闭菜单
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- 场景/互动结果弹窗 -->
     <div id="scenario-modal" class="modal">
         <div class="modal-content">
@@ -280,6 +337,41 @@
     <script src="assets/js/expanded-game-data.js"></script>
     <script src="assets/js/enhanced-game-data.js"></script>
     <script src="assets/js/game-engine.js"></script>
+    
+    <!-- 手机端UI控制脚本 -->
+    <script>
+        // 手机端设置弹窗控制
+        function toggleMobileSettings() {
+            const modal = document.getElementById('mobile-settings-modal');
+            if (modal.classList.contains('active')) {
+                closeMobileSettings();
+            } else {
+                openMobileSettings();
+            }
+        }
+        
+        function openMobileSettings() {
+            const modal = document.getElementById('mobile-settings-modal');
+            modal.classList.add('active');
+            
+            // 检查是否需要显示下一周按钮
+            if (window.game && window.game.gameState.actionPoints <= 0) {
+                document.getElementById('mobile-next-week-btn').style.display = 'block';
+            }
+        }
+        
+        function closeMobileSettings() {
+            const modal = document.getElementById('mobile-settings-modal');
+            modal.classList.remove('active');
+        }
+        
+        // 点击弹窗外部关闭
+        document.getElementById('mobile-settings-modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeMobileSettings();
+            }
+        });
+    </script>
     
     <!-- 调试脚本 -->
     <script>

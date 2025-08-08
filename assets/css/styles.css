@@ -1104,4 +1104,143 @@ button:hover {
         width: 100%;
         max-width: 300px;
     }
+
+    /* 手机端顶部状态栏样式 */
+    .mobile-top-bar {
+        display: flex;
+        background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%);
+        color: white;
+        padding: 10px 15px;
+        font-size: 12px;
+        overflow-x: auto;
+        white-space: nowrap;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+    }
+    
+    .mobile-stats-item {
+        display: flex;
+        align-items: center;
+        margin-right: 15px;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 5px 10px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        flex-shrink: 0;
+    }
+    
+    .mobile-stats-item i {
+        margin-right: 5px;
+    }
+    
+    /* 隐藏桌面端的游戏状态区域 */
+    .game-status {
+        display: none;
+    }
+    
+    /* 手机端设置按钮 */
+    .mobile-settings-btn {
+        position: fixed;
+        top: 15px;
+        right: 15px;
+        width: 45px;
+        height: 45px;
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        font-size: 18px;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        z-index: 200;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .mobile-settings-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    /* 手机端设置弹窗 */
+    .mobile-settings-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 1000;
+        display: none;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .mobile-settings-modal.active {
+        display: flex;
+    }
+    
+    .mobile-settings-content {
+        background: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin: 20px;
+        max-width: 400px;
+        width: 100%;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .mobile-settings-title {
+        text-align: center;
+        color: #ff6b9d;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+    
+    .mobile-settings-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .mobile-settings-btn-item {
+        padding: 15px 20px;
+        border: none;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .mobile-settings-btn-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* 隐藏桌面端的游戏控制按钮 */
+    .game-controls {
+        display: none;
+    }
+    
+    /* 调整游戏内容区域 */
+    .game-content {
+        padding: 15px;
+    }
+    
+    .calendar-container {
+        margin-top: 10px;
+    }
+}
+
+/* 桌面端隐藏手机端元素 */
+@media (min-width: 769px) {
+    .mobile-top-bar,
+    .mobile-settings-btn,
+    .mobile-settings-modal {
+        display: none !important;
+    }
 }
