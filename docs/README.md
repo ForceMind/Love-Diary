@@ -124,6 +124,11 @@ Love-Diary/
 2. 用浏览器打开 `index.html` 文件
 3. 开始游戏！
 
+
+### 在线游戏
+直接访问：[https://forcemind.github.io/Love-Diary/](https://forcemind.github.io/Love-Diary/)
+
+
 ## 浏览器兼容性
 
 - ✅ Chrome 80+
