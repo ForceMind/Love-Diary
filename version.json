@@ -1,0 +1,27 @@
+{
+  "version": "2.0.0",
+  "updateDate": "2024-12-21",
+  "gameTitle": "心动日记｜Love Diary",
+  "description": "100倍故事内容扩展版",
+  "features": [
+    "智能自动加载系统",
+    "100倍故事内容扩展",
+    "深度角色互动系统", 
+    "智能场景选择系统",
+    "多层次好感度系统",
+    "时间敏感场景匹配",
+    "稀有度动态故事线",
+    "视觉效果全面提升"
+  ],
+  "characters": 8,
+  "scenarios": {
+    "学习": 10,
+    "社交": 15, 
+    "休闲": 12,
+    "偶遇": 8,
+    "特殊事件": 25
+  },
+  "totalScenarios": 70,
+  "previousVersion": "1.0.0",
+  "contentIncrease": "100x"
+}

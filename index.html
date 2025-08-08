@@ -158,6 +158,22 @@
         </div>
     </div>
 
+    <!-- 场景互动弹窗 -->
+    <div id="scenario-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="scenario-title">场景标题</h2>
+                <span class="modal-close" onclick="game.closeModal('scenario-modal')">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="scenario-description">场景描述内容...</p>
+                <div class="scenario-choices">
+                    <!-- 选择按钮将动态生成 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 回忆相册弹窗 -->
     <div id="gallery-modal" class="modal">
         <div class="modal-content">
@@ -225,7 +241,8 @@
         </div>
     </div>
 
-    <script src="assets/js/game-data.js"></script>
+    <script src="assets/js/expanded-game-data.js"></script>
+    <script src="assets/js/enhanced-game-data.js"></script>
     <script src="assets/js/game-engine.js"></script>
 </body>
 </html>

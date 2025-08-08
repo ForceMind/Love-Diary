@@ -159,6 +159,113 @@ body {
     background: #f0f0f0;
 }
 
+/* 场景弹窗样式 */
+#scenario-modal .modal-content {
+    max-width: 600px;
+    background: linear-gradient(135deg, #fff5f5, #fff0f3);
+    border: 2px solid #ff8fab;
+    border-radius: 15px;
+    padding: 0;
+    overflow: hidden;
+}
+
+.scenario-title {
+    color: #d63384;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #ff8fab, #ffb3c6);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header .modal-close {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+}
+
+.modal-header .modal-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.modal-body {
+    padding: 25px;
+}
+
+.scenario-description {
+    font-size: 1.1rem;
+    line-height: 1.6;
+    color: #5a5a5a;
+    margin-bottom: 25px;
+    background: rgba(255, 182, 193, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    border-left: 4px solid #ff8fab;
+}
+
+.scenario-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.choice-btn {
+    background: linear-gradient(135deg, #ff8fab, #ffb3c6);
+    color: white;
+    border: none;
+    padding: 15px 20px;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+}
+
+.choice-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 139, 171, 0.4);
+    background: linear-gradient(135deg, #ff7096, #ff9fb5);
+}
+
+.choice-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 10px rgba(255, 139, 171, 0.3);
+}
+
+.choice-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.choice-btn:hover::before {
+    left: 100%;
+}
+
 /* 主菜单样式 */
 #main-menu {
     text-align: center;

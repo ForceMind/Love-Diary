@@ -25,6 +25,94 @@ class LoveDiaryGame {
         console.log('Love Diary Game 初始化完成');
         this.initializeCharacterRelationships();
         this.setupModalEventListeners();
+        
+        // 检查是否有存档，有的话自动加载
+        this.checkAutoLoad();
+    }
+
+    checkAutoLoad() {
+        try {
+            const saveData = localStorage.getItem('loveDiarySave');
+            if (saveData) {
+                const data = JSON.parse(saveData);
+                // 检查存档是否有效且游戏已开始
+                if (data.gameState && data.gameState.player && data.gameState.player.name) {
+                    // 显示自动加载提示
+                    this.showAutoLoadPrompt(data);
+                    return;
+                }
+            }
+        } catch (error) {
+            console.log('存档检查失败:', error);
+        }
+        
+        // 没有有效存档，显示主菜单
+        this.showMainMenu();
+    }
+
+    showAutoLoadPrompt(saveData) {
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.style.cssText = `
+            z-index: 5000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        `;
+        modal.innerHTML = `
+            <div class="modal-content" style="background: white; padding: 30px; border-radius: 15px; max-width: 500px; width: 90%; text-align: center;">
+                <h3 style="color: #ff6b9d; margin-bottom: 20px;">🎮 发现存档</h3>
+                <div style="background: linear-gradient(135deg, #ffeef8 0%, #f0e6ff 100%); padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                    <h4 style="color: #ff6b9d; margin-bottom: 10px;">💾 存档信息</h4>
+                    <p style="margin: 5px 0;"><strong>角色：</strong>${saveData.gameState.player.name}</p>
+                    <p style="margin: 5px 0;"><strong>进度：</strong>第${saveData.gameState.currentWeek}周</p>
+                    <p style="margin: 5px 0;"><strong>专业：</strong>${saveData.gameState.player.major}</p>
+                    <small style="color: #666;">${new Date(saveData.timestamp).toLocaleString()}</small>
+                </div>
+                <p style="line-height: 1.8; color: #555; margin-bottom: 25px;">是否继续之前的游戏？</p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button onclick="game.startNewGame(); this.parentElement.parentElement.parentElement.remove();" 
+                            style="background: #f44336; color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 500;">
+                        重新开始
+                    </button>
+                    <button onclick="game.autoLoadGame(); this.parentElement.parentElement.parentElement.remove();" 
+                            style="background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 500;">
+                        继续游戏
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
+    autoLoadGame() {
+        if (this.loadGame()) {
+            this.showModal('game-timeline-modal');
+            this.showGameNotification('欢迎回来！游戏已自动加载', 'success');
+        } else {
+            this.showMainMenu();
+        }
+    }
+
+    startNewGame() {
+        // 清除旧存档
+        localStorage.removeItem('loveDiarySave');
+        this.resetGame();
+        this.showMainMenu();
+    }
+
+    showMainMenu() {
+        // 确保主菜单显示
+        const mainMenu = document.getElementById('main-menu');
+        if (mainMenu) {
+            mainMenu.classList.add('active');
+        }
     }
 
     initializeCharacterRelationships() {
@@ -180,9 +268,20 @@ class LoveDiaryGame {
     showGameConfirm(message, onConfirm, onCancel = null) {
         const modal = document.createElement('div');
         modal.className = 'modal active';
-        modal.style.zIndex = '3500';
+        modal.style.cssText = `
+            z-index: 4000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        `;
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-content" style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%; text-align: center;">
                 <h3 style="color: #ff6b9d; margin-bottom: 20px;">🤔 确认操作</h3>
                 <p style="line-height: 1.8; color: #555; margin-bottom: 25px; font-size: 16px;">${message}</p>
                 <div style="display: flex; gap: 15px; justify-content: center;">
@@ -219,9 +318,9 @@ class LoveDiaryGame {
         this.randomEncounter(day);
     }
 
-    // 随机遇到角色系统
+    // 随机遇到角色系统 - 增强版
     randomEncounter(day) {
-        // 根据不同日期有不同的遇到概率
+        // 根据不同日期有不同的遇到概率和活动类型
         const dayActivities = {
             1: { type: '学习', characters: ['顾言', '江澈', '苏云深'] }, // 星期一：学习日
             2: { type: '社交', characters: ['林舟', '唐言', '萧然'] },   // 星期二：社交日
@@ -233,18 +332,202 @@ class LoveDiaryGame {
         };
 
         const dayActivity = dayActivities[day];
-        const availableCharacters = dayActivity.characters;
+        const activityType = dayActivity.type;
         
-        // 70% 概率遇到角色，30% 概率独自活动
-        const encounterChance = Math.random();
+        // 从扩展数据中获取当前活动类型的场景
+        const currentScenario = this.getRandomScenario(activityType);
         
-        if (encounterChance > 0.3 && availableCharacters.length > 0) {
-            // 随机选择一个角色
-            const randomCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
-            this.interactWithCharacter(randomCharacter);
+        if (currentScenario) {
+            this.playScenario(currentScenario, activityType, dayActivity.characters);
         } else {
-            // 独自活动
-            this.soloActivity(dayActivity.type);
+            // 回退到原有的简单逻辑
+            const availableCharacters = dayActivity.characters;
+            const encounterChance = Math.random();
+            
+            if (encounterChance > 0.3 && availableCharacters.length > 0) {
+                // 随机选择一个角色
+                const randomCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+                this.interactWithCharacter(randomCharacter);
+            } else {
+                // 独自活动
+                this.soloActivity(activityType);
+            }
+        }
+    }
+
+    // 获取随机场景
+    getRandomScenario(activityType) {
+        const scenarios = gameData.scenarios[activityType];
+        if (!scenarios || scenarios.length === 0) return null;
+        
+        // 过滤符合条件的场景
+        const availableScenarios = scenarios.filter(scenario => {
+            // 检查时间要求
+            if (scenario.time) {
+                const currentHour = new Date().getHours();
+                if (scenario.time === '早晨' && (currentHour < 6 || currentHour > 10)) return false;
+                if (scenario.time === '上午' && (currentHour < 8 || currentHour > 12)) return false;
+                if (scenario.time === '下午' && (currentHour < 12 || currentHour > 18)) return false;
+                if (scenario.time === '晚上' && (currentHour < 18 || currentHour > 23)) return false;
+                if (scenario.time === '深夜' && (currentHour < 22 && currentHour > 6)) return false;
+            }
+            
+            // 检查其他条件（可以根据需要扩展）
+            if (scenario.requirement) {
+                // 这里可以添加更复杂的条件检查
+                return true; // 暂时简化
+            }
+            
+            return true;
+        });
+        
+        if (availableScenarios.length === 0) return null;
+        
+        // 根据稀有度加权选择
+        const weightedScenarios = [];
+        availableScenarios.forEach(scenario => {
+            let weight = 1;
+            switch (scenario.rarity) {
+                case 'common': weight = 6; break;
+                case 'uncommon': weight = 3; break;
+                case 'rare': weight = 1; break;
+                case 'very_rare': weight = 0.3; break;
+                case 'periodic': weight = 2; break;
+                default: weight = 3; break;
+            }
+            
+            // 根据权重添加到数组中
+            const times = Math.ceil(weight);
+            for (let i = 0; i < times; i++) {
+                weightedScenarios.push(scenario);
+            }
+        });
+        
+        return weightedScenarios[Math.floor(Math.random() * weightedScenarios.length)];
+    }
+
+    // 播放场景
+    playScenario(scenario, activityType, availableCharacters) {
+        // 决定是否有角色遇到
+        let encounteredCharacter = null;
+        
+        if (scenario.randomEncounter) {
+            const encounter = scenario.randomEncounter;
+            if (Math.random() < encounter.probability) {
+                // 从场景指定的角色或默认角色中选择
+                const possibleChars = encounter.characters || availableCharacters;
+                const filteredChars = possibleChars.filter(char => 
+                    gameData.characters[char] && availableCharacters.includes(char)
+                );
+                
+                if (filteredChars.length > 0) {
+                    encounteredCharacter = filteredChars[Math.floor(Math.random() * filteredChars.length)];
+                }
+            }
+        } else {
+            // 标准概率遇到角色
+            if (Math.random() > 0.3) {
+                encounteredCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+            }
+        }
+        
+        // 显示场景
+        this.showScenarioModal(scenario, encounteredCharacter, activityType);
+    }
+
+    // 显示场景弹窗
+    showScenarioModal(scenario, character, activityType) {
+        const modal = document.getElementById('scenario-modal');
+        if (!modal) {
+            console.error('场景弹窗元素未找到');
+            return;
+        }
+
+        // 设置场景内容
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+
+        if (titleElement) titleElement.textContent = scenario.name || `${activityType}活动`;
+        if (descElement) {
+            let description = scenario.description || '你进行了一次活动...';
+            if (character) {
+                description += `\n\n在活动中，你遇到了${character}...`;
+            }
+            descElement.textContent = description;
+        }
+
+        // 清空并设置选择按钮
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            if (scenario.choices && scenario.choices.length > 0) {
+                scenario.choices.forEach((choice, index) => {
+                    const button = document.createElement('button');
+                    button.className = 'choice-btn';
+                    button.textContent = choice.text;
+                    button.addEventListener('click', () => {
+                        this.handleScenarioChoice(choice, character, scenario);
+                        this.closeModal('scenario-modal');
+                    });
+                    choicesElement.appendChild(button);
+                });
+            } else {
+                // 默认选择
+                const button = document.createElement('button');
+                button.className = 'choice-btn';
+                button.textContent = '继续';
+                button.addEventListener('click', () => {
+                    this.handleScenarioChoice({effect: {}, outcome: '你度过了一段时光...'}, character, scenario);
+                    this.closeModal('scenario-modal');
+                });
+                choicesElement.appendChild(button);
+            }
+        }
+
+        this.openModal('scenario-modal');
+    }
+
+    // 处理场景选择
+    handleScenarioChoice(choice, character, scenario) {
+        // 应用效果
+        if (choice.effect) {
+            Object.keys(choice.effect).forEach(attr => {
+                if (this.gameState.playerStats[attr] !== undefined) {
+                    this.gameState.playerStats[attr] = Math.max(0, 
+                        Math.min(100, this.gameState.playerStats[attr] + choice.effect[attr])
+                    );
+                }
+            });
+        }
+
+        // 如果遇到了角色，处理角色关系
+        if (character && gameData.characters[character]) {
+            // 基础好感度变化
+            const baseAffectionChange = Math.floor(Math.random() * 3) + 1;
+            this.updateCharacterRelationship(character, baseAffectionChange, 1);
+            
+            // 如果有特定的好感度变化
+            if (choice.affectionChange && choice.affectionChange[character]) {
+                this.updateCharacterRelationship(character, choice.affectionChange[character], 1);
+            }
+        }
+
+        // 显示结果
+        let resultText = choice.outcome || '你的选择产生了一些影响...';
+        if (character) {
+            resultText += `\n\n与${character}的关系有所变化。`;
+        }
+        
+        this.showGameNotification(resultText, 'success');
+        
+        // 消耗行动点
+        this.gameState.actionPoints = Math.max(0, this.gameState.actionPoints - 1);
+        this.updateUI();
+        
+        // 检查是否触发特殊事件
+        if (character) {
+            this.checkSpecialEvents(character);
         }
     }
 
@@ -432,7 +715,9 @@ class LoveDiaryGame {
         
         // 检查是否还有行动点
         if (this.gameState.actionPoints > 0) {
-            this.showModal('character-selection-modal');
+            // 直接回到时间线让玩家选择下一个活动
+            this.showModal('game-timeline-modal');
+            this.updateGameUI();
         } else {
             this.endWeek();
         }
@@ -469,10 +754,21 @@ class LoveDiaryGame {
     showSpecialEvent(title, description) {
         const modal = document.createElement('div');
         modal.className = 'modal active';
-        modal.style.zIndex = '3500'; // 确保在其他弹窗之上
+        modal.style.cssText = `
+            z-index: 3500;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        `;
         modal.innerHTML = `
-            <div class="modal-content" style="max-width: 400px;">
-                <span class="modal-close" onclick="this.parentElement.parentElement.remove()">&times;</span>
+            <div class="modal-content" style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%;">
+                <span class="modal-close" onclick="this.parentElement.parentElement.remove()" style="position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #999;">&times;</span>
                 <div style="text-align: center;">
                     <h3 style="color: #ff6b9d; margin-bottom: 20px;">${title}</h3>
                     <p style="line-height: 1.8; color: #555; margin-bottom: 20px;">${description}</p>
@@ -506,11 +802,27 @@ class LoveDiaryGame {
             modal.classList.remove('active');
         });
         
+        // 清理所有动态创建的弹窗
+        document.querySelectorAll('.modal:not([id])').forEach(modal => {
+            modal.remove();
+        });
+        
         const modal = document.createElement('div');
         modal.className = 'modal active';
-        modal.style.zIndex = '3000';
+        modal.style.cssText = `
+            z-index: 3000;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        `;
         modal.innerHTML = `
-            <div class="modal-content">
+            <div class="modal-content" style="background: white; padding: 30px; border-radius: 15px; max-width: 400px; width: 90%;">
                 <div style="text-align: center;">
                     <h3 style="color: #ff6b9d;">📅 第${this.gameState.currentWeek - 1}周总结</h3>
                     <p style="margin: 20px 0; line-height: 1.6;">
