@@ -17,6 +17,8 @@
         <div class="menu-buttons">
             <button onclick="showCharacterCreation()">开始游戏</button>
             <button onclick="loadGame()">读取存档</button>
+            <button onclick="showAchievements()">成就系统</button>
+            <button onclick="showGallery()">回忆相册</button>
             <button onclick="showSettings()">设置</button>
         </div>
     </div>
@@ -97,7 +99,12 @@
         <!-- 角色状态栏 -->
         <div id="status-bar">
             <div class="player-info">
-                <span id="player-display-name">小雨</span> | <span id="player-display-major">中文系</span>
+                <span id="player-display-name">小雨</span> | <span id="player-display-major">中文系</span> | <span id="player-display-personality">开朗</span>
+                <div class="game-progress">
+                    <span>第<span id="current-week-display">1</span>周</span>
+                    <span>金钱: <span id="player-money">100</span></span>
+                    <span>体力: <span id="player-energy">100</span>/100</span>
+                </div>
             </div>
             <div class="affection-meters">
                 <div class="affection-item">
@@ -187,6 +194,8 @@
 
         <!-- 游戏控制按钮 -->
         <div class="game-controls">
+            <button onclick="quickSave()">快速保存</button>
+            <button onclick="quickLoad()">快速读取</button>
             <button onclick="nextWeek()">下一周</button>
             <button onclick="saveGame()">保存</button>
             <button onclick="showMainMenu()">主菜单</button>
@@ -199,6 +208,75 @@
             <h2 id="ending-title"></h2>
             <div id="ending-content"></div>
             <div id="ending-image"></div>
+            <button onclick="showMainMenu()">返回主菜单</button>
+        </div>
+    </div>
+
+    <!-- 成就系统界面 -->
+    <div id="achievements-screen" class="screen">
+        <div class="achievements-container">
+            <h2>成就系统</h2>
+            <div class="achievement-stats">
+                <div class="stat-item">
+                    <span>已解锁成就:</span>
+                    <span id="unlocked-achievements">0</span>/<span id="total-achievements">0</span>
+                </div>
+                <div class="stat-item">
+                    <span>完成进度:</span>
+                    <span id="achievement-progress">0%</span>
+                </div>
+            </div>
+            <div id="achievements-list" class="achievements-list"></div>
+            <button onclick="showMainMenu()">返回主菜单</button>
+        </div>
+    </div>
+
+    <!-- 回忆相册界面 -->
+    <div id="gallery-screen" class="screen">
+        <div class="gallery-container">
+            <h2>回忆相册</h2>
+            <div class="gallery-tabs">
+                <button class="tab-button active" onclick="showGalleryTab('endings')">结局收集</button>
+                <button class="tab-button" onclick="showGalleryTab('characters')">角色图鉴</button>
+                <button class="tab-button" onclick="showGalleryTab('scenes')">场景回顾</button>
+            </div>
+            <div id="gallery-content" class="gallery-content"></div>
+            <button onclick="showMainMenu()">返回主菜单</button>
+        </div>
+    </div>
+
+    <!-- 设置界面 -->
+    <div id="settings-screen" class="screen">
+        <div class="settings-container">
+            <h2>游戏设置</h2>
+            <div class="settings-list">
+                <div class="setting-item">
+                    <label>背景音乐</label>
+                    <input type="range" id="bgm-volume" min="0" max="100" value="50">
+                    <span id="bgm-value">50%</span>
+                </div>
+                <div class="setting-item">
+                    <label>音效</label>
+                    <input type="range" id="sfx-volume" min="0" max="100" value="70">
+                    <span id="sfx-value">70%</span>
+                </div>
+                <div class="setting-item">
+                    <label>文字速度</label>
+                    <select id="text-speed">
+                        <option value="slow">慢速</option>
+                        <option value="normal" selected>普通</option>
+                        <option value="fast">快速</option>
+                        <option value="instant">瞬间</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label>自动保存</label>
+                    <input type="checkbox" id="auto-save" checked>
+                </div>
+                <div class="setting-item">
+                    <button onclick="resetGame()" class="danger-button">重置游戏数据</button>
+                </div>
+            </div>
             <button onclick="showMainMenu()">返回主菜单</button>
         </div>
     </div>

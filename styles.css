@@ -254,6 +254,14 @@ body {
     color: #c44569;
 }
 
+.game-progress {
+    margin-top: 8px;
+    display: flex;
+    gap: 20px;
+    font-size: 0.9rem;
+    color: #666;
+}
+
 .affection-meters {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -526,4 +534,271 @@ body {
         flex-direction: column;
         align-items: center;
     }
+}
+
+/* 成就系统界面 */
+#achievements-screen,
+#gallery-screen,
+#settings-screen {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg, #ffeef8 0%, #f0e6ff 100%);
+}
+
+.achievements-container,
+.gallery-container,
+.settings-container {
+    background: white;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 800px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+}
+
+.achievements-container h2,
+.gallery-container h2,
+.settings-container h2 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #c44569;
+    font-size: 2rem;
+}
+
+/* 成就统计 */
+.achievement-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    font-weight: 500;
+}
+
+.stat-item span:last-child {
+    color: #c44569;
+    font-size: 1.2rem;
+}
+
+/* 成就列表 */
+.achievements-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.achievement-item {
+    padding: 20px;
+    border: 2px solid #e0e0e0;
+    border-radius: 15px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.achievement-item.unlocked {
+    border-color: #ff6b9d;
+    background: linear-gradient(135deg, #ffeef8, #fff);
+}
+
+.achievement-item.locked {
+    opacity: 0.6;
+    background: #f5f5f5;
+}
+
+.achievement-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.achievement-name {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.achievement-description {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* 相册界面 */
+.gallery-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    justify-content: center;
+}
+
+.tab-button {
+    padding: 12px 24px;
+    border: 2px solid #e0e0e0;
+    border-radius: 25px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    font-weight: 500;
+}
+
+.tab-button.active {
+    border-color: #ff6b9d;
+    background: #ff6b9d;
+    color: white;
+}
+
+.tab-button:hover:not(.active) {
+    border-color: #ff6b9d;
+    background: #ffeef8;
+}
+
+.gallery-content {
+    min-height: 400px;
+    margin-bottom: 30px;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+}
+
+.gallery-item {
+    background: #f8f9fa;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.gallery-item.unlocked {
+    border-color: #ff6b9d;
+    background: white;
+}
+
+.gallery-item.locked {
+    opacity: 0.5;
+}
+
+.gallery-item-image {
+    width: 100%;
+    height: 120px;
+    background: #e0e0e0;
+    border-radius: 10px;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+}
+
+.gallery-item-title {
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.gallery-item-description {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+}
+
+/* 设置界面 */
+.settings-list {
+    margin-bottom: 30px;
+}
+
+.setting-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.setting-item:last-child {
+    border-bottom: none;
+    justify-content: center;
+}
+
+.setting-item label {
+    font-weight: 500;
+    color: #333;
+    min-width: 100px;
+}
+
+.setting-item input[type="range"] {
+    flex: 1;
+    margin: 0 15px;
+}
+
+.setting-item select {
+    padding: 8px 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-family: inherit;
+}
+
+.setting-item input[type="checkbox"] {
+    transform: scale(1.2);
+}
+
+.danger-button {
+    background: #dc3545 !important;
+    color: white !important;
+    border: none !important;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: background 0.3s ease;
+}
+
+.danger-button:hover {
+    background: #c82333 !important;
+}
+
+/* 通知系统 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: white;
+    border: 2px solid #ff6b9d;
+    border-radius: 15px;
+    padding: 15px 20px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    max-width: 300px;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    border-color: #28a745;
+}
+
+.notification.error {
+    border-color: #dc3545;
+}
+
+.notification.warning {
+    border-color: #ffc107;
 }

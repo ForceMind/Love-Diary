@@ -610,5 +610,107 @@ const gameData = {
                 requirement: { affection: 20 }
             }
         }
+    },
+
+    achievements: {
+        first_love: {
+            id: "first_love",
+            name: "初恋的味道",
+            description: "第一次达到任意角色20点好感度",
+            icon: "💕",
+            unlocked: false
+        },
+        social_butterfly: {
+            id: "social_butterfly",
+            name: "社交达人",
+            description: "完成10次社交活动",
+            icon: "👥",
+            unlocked: false
+        },
+        bookworm: {
+            id: "bookworm",
+            name: "书虫",
+            description: "完成10次学习活动",
+            icon: "📚",
+            unlocked: false
+        },
+        leisure_lover: {
+            id: "leisure_lover",
+            name: "休闲主义者",
+            description: "完成10次休闲活动",
+            icon: "🎮",
+            unlocked: false
+        },
+        lucky_encounter: {
+            id: "lucky_encounter",
+            name: "命运邂逅",
+            description: "完成10次偶遇活动",
+            icon: "✨",
+            unlocked: false
+        },
+        popular_girl: {
+            id: "popular_girl",
+            name: "万人迷",
+            description: "同时拥有3个角色40+好感度",
+            icon: "🌟",
+            unlocked: false
+        },
+        sweet_ending: {
+            id: "sweet_ending",
+            name: "甜蜜收获",
+            description: "达成任意角色的甜蜜结局",
+            icon: "💖",
+            unlocked: false
+        },
+        collector: {
+            id: "collector",
+            name: "收集家",
+            description: "解锁5个不同的结局",
+            icon: "🏆",
+            unlocked: false
+        },
+        perfect_student: {
+            id: "perfect_student",
+            name: "完美学生",
+            description: "连续4周每天都安排活动",
+            icon: "⭐",
+            unlocked: false
+        },
+        true_love: {
+            id: "true_love",
+            name: "真爱无敌",
+            description: "达到任意角色100点好感度",
+            icon: "💝",
+            unlocked: false
+        },
+        all_endings: {
+            id: "all_endings",
+            name: "结局大师",
+            description: "解锁所有24个结局",
+            icon: "👑",
+            unlocked: false
+        },
+        speedrun: {
+            id: "speedrun",
+            name: "效率专家",
+            description: "在6周内达成甜蜜结局",
+            icon: "⚡",
+            unlocked: false
+        }
+    },
+
+    gallery: {
+        endings: {},
+        characters: {
+            顾言: { unlocked: false, scenes: [] },
+            林舟: { unlocked: false, scenes: [] },
+            宋之南: { unlocked: false, scenes: [] },
+            周奕辰: { unlocked: false, scenes: [] },
+            江澈: { unlocked: false, scenes: [] },
+            苏云深: { unlocked: false, scenes: [] },
+            唐言: { unlocked: false, scenes: [] },
+            萧然: { unlocked: false, scenes: [] }
+        },
+        scenes: {}
     }
 };
