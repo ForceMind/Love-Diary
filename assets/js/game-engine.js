@@ -690,105 +690,48 @@ class LoveDiaryGame {
         this.showModal('scenario-modal');
     }
     
-    // 获取故事内容
-    getStoryContent(characterName, storyType, round) {
-        const stories = {
-            林舟: {
-                first_meeting: {
-                    1: {
-                        description: "你正在篮球场边的小径上走着，突然一个篮球朝你滚过来。你弯腰捡起球，抬头就看到一个阳光男孩跑了过来。",
-                        dialogue: "不好意思不好意思！球跑到你那边了。咦？你是新生吧？我叫林舟，体育系的。谢谢你帮我捡球！",
-                        choices: [
-                            { text: "没关系，我叫" + this.gameState.player.name, effect: { affection: 1 }, next: 2 },
-                            { text: "你怎么知道我是新生？", effect: { affection: 1 }, next: 2 },
-                            { text: "小心一点，别砸到人", effect: { affection: 0 }, next: 2 }
-                        ]
-                    },
-                    2: {
-                        description: "林舟接过篮球，脸上带着歉意的笑容，你能感受到他身上散发的运动员特有的阳光气息。",
-                        dialogue: "哈哈，因为你看起来还有点紧张，像刚入学的样子。别担心，大学生活会很有趣的！你是什么专业的？",
-                        choices: [
-                            { text: "我是" + this.gameState.player.major + "专业的", effect: { affection: 1 }, next: 3 },
-                            { text: "我确实还在熟悉环境", effect: { trust: 1 }, next: 3 },
-                            { text: "你很了解新生呢", effect: { affection: 1 }, next: 3 }
-                        ]
-                    },
-                    3: {
-                        description: "林舟把篮球抱在怀里，真诚地看着你。",
-                        dialogue: "太好了！如果有什么不懂的尽管问我，我已经在这里待了一年了。对了，如果你有兴趣的话，欢迎来看我们的篮球比赛！",
-                        choices: [
-                            { text: "谢谢你，林舟", effect: { affection: 2, trust: 1 }, next: 'end' },
-                            { text: "我会考虑去看比赛的", effect: { affection: 2 }, next: 'end' },
-                            { text: "有时间的话", effect: { affection: 1, trust: 1 }, next: 'end' }
-                        ]
-                    }
+    // 获取故事内容 - 从数据文件中读取
+    getStoryContent(characterName, activityIdOrStoryType, storyTypeOrRound, roundOrUndefined) {
+        // 兼容旧版本调用（3个参数）和新版本调用（4个参数）
+        let actualStoryType, actualRound;
+        if (roundOrUndefined !== undefined) {
+            // 新版本调用：characterName, activityId, storyType, round
+            actualStoryType = storyTypeOrRound;
+            actualRound = roundOrUndefined;
+        } else {
+            // 旧版本调用：characterName, storyType, round
+            actualStoryType = activityIdOrStoryType;
+            actualRound = storyTypeOrRound;
+        }
+        
+        // 首先检查是否有全局的gameData变量（来自expanded-game-data.js）
+        if (typeof gameData !== 'undefined' && gameData.storyData) {
+            // 从外部数据文件获取故事内容
+            const storyData = gameData.storyData[actualStoryType];
+            if (storyData && storyData[characterName] && storyData[characterName][actualRound]) {
+                const story = storyData[characterName][actualRound];
+                
+                // 动态替换玩家名字
+                const processedStory = JSON.parse(JSON.stringify(story)); // 深拷贝
+                if (processedStory.choices) {
+                    processedStory.choices.forEach(choice => {
+                        if (choice.text.includes('我叫') && this.gameState?.player?.name) {
+                            choice.text = choice.text.replace(/我叫.*?，/, `我叫${this.gameState.player.name}，`);
+                            choice.text = choice.text.replace(/我叫.*?"/, `我叫${this.gameState.player.name}"`);
+                        }
+                        if (choice.text.includes('我是') && this.gameState?.player?.major) {
+                            choice.text = choice.text.replace(/我是.*?专业的/, `我是${this.gameState.player.major}专业的`);
+                        }
+                    });
                 }
-            },
-            周奕辰: {
-                first_meeting: {
-                    1: {
-                        description: "你走过图书馆旁的小花园，发现一个看起来比你还小的男孩正拿着相机对着花朵拍照，听到脚步声后转过身来。",
-                        dialogue: "啊！不好意思，我挡到你的路了吗？我叫周奕辰，大家都叫我小辰。你是新同学吧？看起来好有气质啊！",
-                        choices: [
-                            { text: "你好小辰，我叫" + this.gameState.player.name, effect: { affection: 1 }, next: 2 },
-                            { text: "你在拍什么呢？", effect: { affection: 1, trust: 1 }, next: 2 },
-                            { text: "没关系，你继续拍", effect: { affection: 0 }, next: 2 }
-                        ]
-                    },
-                    2: {
-                        description: "周奕辰兴奋地举起相机，眼睛亮晶晶的。",
-                        dialogue: "我在拍这些秋海棠！你看，这个角度的光线特别美。我想把校园里的每个美丽角落都记录下来。你要不要也来看看？",
-                        choices: [
-                            { text: "好啊，让我看看", effect: { affection: 2 }, next: 3 },
-                            { text: "你很喜欢摄影呢", effect: { affection: 1 }, next: 3 },
-                            { text: "我不太懂摄影", effect: { affection: 0 }, next: 3 }
-                        ]
-                    },
-                    3: {
-                        description: "小辰开心地向你展示相机里的照片，他的热情很有感染力。",
-                        dialogue: "你看！这张是梧桐大道，这张是图书馆，还有这张湖景...我觉得大学生活一定会很精彩！以后在校园里遇到可以一起探索吗？",
-                        choices: [
-                            { text: "当然！我也很期待", effect: { affection: 2, trust: 1 }, next: 'end' },
-                            { text: "你的照片拍得真好", effect: { affection: 2 }, next: 'end' },
-                            { text: "有机会的话", effect: { affection: 1 }, next: 'end' }
-                        ]
-                    }
-                }
-            },
-            江澈: {
-                first_meeting: {
-                    1: {
-                        description: "你在图书馆里寻找座位，发现角落里有个文艺气质的男生正在安静地写着什么，你走过去时他抬起头。",
-                        dialogue: "你好，请问这里有人坐吗？我是江澈。抱歉，看起来你在找座位，这里挺安静的，适合学习。",
-                        choices: [
-                            { text: "没有人，我是" + this.gameState.player.name, effect: { affection: 1 }, next: 2 },
-                            { text: "你在写什么？", effect: { affection: 1, trust: 1 }, next: 2 },
-                            { text: "谢谢，这里确实很安静", effect: { affection: 1 }, next: 2 }
-                        ]
-                    },
-                    2: {
-                        description: "江澈放下笔，温和地看着你，眼神中带着文艺青年特有的深邃。",
-                        dialogue: "刚才在写一首诗，关于初秋的校园。你知道吗？图书馆这个角落光线特别好，很有诗意。你也是来学习的吗？",
-                        choices: [
-                            { text: "听起来很浪漫", effect: { affection: 2 }, next: 3 },
-                            { text: "你是文学专业的？", effect: { affection: 1, trust: 1 }, next: 3 },
-                            { text: "我是来借书的", effect: { affection: 0 }, next: 3 }
-                        ]
-                    },
-                    3: {
-                        description: "江澈微微一笑，那种温和的气质让人印象深刻。",
-                        dialogue: "文学是我的专业，也是我的爱好。如果你有兴趣，以后可以一起在这里学习，或者聊聊书和诗。希望能在这个安静的角落再次遇见你。",
-                        choices: [
-                            { text: "我很乐意和你交流", effect: { affection: 2, trust: 1 }, next: 'end' },
-                            { text: "希望能成为朋友", effect: { affection: 2 }, next: 'end' },
-                            { text: "以后多多指教", effect: { affection: 1, trust: 1 }, next: 'end' }
-                        ]
-                    }
-                }
+                
+                return processedStory;
             }
-        };
-
-        return stories[characterName]?.[storyType]?.[round] || {
+        }
+        
+        // 如果数据文件中没有找到，返回兼容性内容
+        console.warn(`未找到故事内容: ${characterName} - ${actualStoryType} - 第${actualRound}轮`);
+        return {
             description: "故事内容加载中...",
             dialogue: "",
             choices: [{ text: "继续", effect: {}, next: 'end' }]
@@ -800,10 +743,10 @@ class LoveDiaryGame {
         // 应用效果
         if (choice.effect) {
             Object.keys(choice.effect).forEach(attr => {
-                if (attr === 'affection' || attr === 'trust') {
+                if (attr === 'affection' || attr === 'trust' || attr === 'impression') {
                     // 更新角色关系
                     if (!this.gameState.characterRelationships[characterName]) {
-                        this.gameState.characterRelationships[characterName] = { affection: 0, trust: 0, events: [] };
+                        this.gameState.characterRelationships[characterName] = { affection: 0, trust: 0, impression: 0, events: [] };
                     }
                     this.gameState.characterRelationships[characterName][attr] += choice.effect[attr];
                 }
@@ -812,20 +755,25 @@ class LoveDiaryGame {
         
         // 检查是否继续对话
         if (choice.next === 'end') {
-            // 结束对话，显示结果
-            this.showStoryResult(characterName, storyType);
+            // 结束对话，显示结果 - 调用新的结果显示方法
+            this.showOldStoryResult(characterName, storyType);
         } else {
             // 继续下一轮对话
             this.showCharacterStoryline(characterName, storyType, choice.next);
         }
     }
     
-    // 显示故事结果
-    showStoryResult(characterName, storyType) {
+    // 显示旧故事系统的结果（兼容性方法）
+    showOldStoryResult(characterName, storyType) {
         const modal = document.getElementById('scenario-modal');
         const titleElement = modal.querySelector('.scenario-title');
         const descElement = modal.querySelector('.scenario-description');
         const choicesElement = modal.querySelector('.scenario-choices');
+        
+        // 确保关系数据存在
+        if (!this.gameState.characterRelationships[characterName]) {
+            this.gameState.characterRelationships[characterName] = { affection: 0, trust: 0, impression: 0, events: [] };
+        }
         
         if (titleElement) titleElement.textContent = '校园偶遇完成';
         
@@ -841,8 +789,8 @@ class LoveDiaryGame {
                         </p>
                         <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 10px;">
                             <h4 style="color: #2e7d32; margin-bottom: 10px;">💖 关系变化</h4>
-                            <p style="color: #4caf50; margin: 5px 0;">好感度: ${relationship.affection}</p>
-                            <p style="color: #4caf50; margin: 5px 0;">信任度: ${relationship.trust}</p>
+                            <p style="color: #4caf50; margin: 5px 0;">好感度: ${relationship.affection || 0}</p>
+                            <p style="color: #4caf50; margin: 5px 0;">信任度: ${relationship.trust || 0}</p>
                         </div>
                     </div>
                 </div>
@@ -859,6 +807,79 @@ class LoveDiaryGame {
                 this.closeModal('scenario-modal');
                 this.showGameScreen();
                 this.updateGameUI();
+            });
+            
+            choicesElement.appendChild(continueBtn);
+        }
+
+        this.showModal('scenario-modal');
+    }
+    
+    // 显示故事结果（新系统）
+    showStoryResult(characterName, activityId, storyType, round) {
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        // 更新角色认识状态
+        if (storyType === 'first_meeting') {
+            // 初始化认识状态（如果还没有）
+            if (!this.gameState.characterMeetStatus) {
+                this.initializeCharacterMeetStatus();
+            }
+            this.gameState.characterMeetStatus[characterName].met = true;
+            this.gameState.characterMeetStatus[characterName].meetWeek = this.gameState.currentWeek;
+        }
+        
+        // 提升亲密度
+        if (this.gameState.characterMeetStatus && this.gameState.characterMeetStatus[characterName]) {
+            this.gameState.characterMeetStatus[characterName].intimacyLevel += 1;
+        }
+        
+        const relationship = this.gameState.characterRelationships[characterName] || { affection: 0, trust: 0, impression: 0 };
+        const meetStatus = this.gameState.characterMeetStatus?.[characterName] || { intimacyLevel: 1 };
+        
+        if (titleElement) {
+            titleElement.textContent = storyType === 'first_meeting' ? '初次相遇完成' : '互动完成';
+        }
+        
+        if (descElement) {
+            const isFirstMeeting = storyType === 'first_meeting';
+            descElement.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 40px; margin-bottom: 15px;">${isFirstMeeting ? '💫' : '✨'}</div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                        <h4 style="color: #ff6b9d; margin-bottom: 15px;">
+                            ${isFirstMeeting ? `认识了${characterName}！` : `与${characterName}度过了愉快的时光`}
+                        </h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                            ${isFirstMeeting ? 
+                                `通过这次${this.getActivityName(activityId)}，你认识了${characterName}。他给你留下了很好的印象。` :
+                                `你们的关系在这次${this.getActivityName(activityId)}中得到了进一步发展。`
+                            }
+                        </p>
+                        <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 10px;">
+                            <h4 style="color: #2e7d32; margin-bottom: 10px;">💖 关系变化</h4>
+                            <p style="color: #4caf50; margin: 5px 0;">好感度: ${relationship.affection}</p>
+                            <p style="color: #4caf50; margin: 5px 0;">信任度: ${relationship.trust}</p>
+                            <p style="color: #4caf50; margin: 5px 0;">印象分: ${relationship.impression}</p>
+                            <p style="color: #ff9800; margin: 5px 0;">亲密等级: ${meetStatus.intimacyLevel}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'choice-btn';
+            continueBtn.textContent = '继续游戏';
+            continueBtn.addEventListener('click', () => {
+                this.closeModal('scenario-modal');
+                this.finishActivity();
             });
             
             choicesElement.appendChild(continueBtn);
@@ -1297,247 +1318,6 @@ class LoveDiaryGame {
                 this.askForNextWeek();
             }, 1500);
         }
-    }
-    
-    // ===== 顾言故事线 =====
-    getGuYanLibraryFirstMeeting(round) {
-        const rounds = {
-            1: {
-                description: "你在图书馆寻找专业课的参考书籍，在书架间转了好久都没找到。这时一个戴眼镜的男生走过来，看起来很有学者气质。",
-                dialogue: "需要帮忙吗？看你在这一排找了很久。我是法学系的顾言，对图书馆的书籍分布比较熟悉。",
-                choices: [
-                    { text: "谢谢！我在找专业课的参考书", effect: { affection: 2, impression: 1 }, next: 2, hint: "表现出对学习的重视" },
-                    { text: "你看起来很眼熟，是学生会的吗？", effect: { affection: 1, trust: 1 }, next: 2, hint: "表现出对他身份的好奇" },
-                    { text: "不用了，我自己能找到", effect: { affection: -1 }, next: 2, hint: "可能显得有点冷淡" }
-                ]
-            },
-            2: {
-                description: "顾言推了推眼镜，温和地笑了笑。他在书架间轻松地找到了你需要的书籍。",
-                dialogue: "你说得对，我确实在学生会工作。这些专业书籍确实不好找，图书管理员经常放错位置。你是哪个专业的？",
-                choices: [
-                    { text: "我是" + (this.gameState?.player?.major || '商学') + "专业的，谢谢你的帮助", effect: { affection: 2, trust: 2 }, next: 3, hint: "真诚地表达感谢" },
-                    { text: "学生会的工作一定很忙吧？", effect: { affection: 1, impression: 1 }, next: 3, hint: "表现出对他的关心" },
-                    { text: "你为什么要帮助陌生人？", effect: { impression: -1 }, next: 3, hint: "可能让他觉得你多疑" }
-                ]
-            },
-            3: {
-                description: "顾言整理了一下手中的资料，眼神中闪烁着智慧的光芒。",
-                dialogue: "帮助同学是我的责任，也是我的快乐。如果以后在学习上有什么困难，可以随时找我。对了，我经常在这个时间来图书馆，或许我们还会再遇见。",
-                choices: [
-                    { text: "好的，我会记住的。希望能成为朋友", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "建立良好的第一印象" },
-                    { text: "谢谢学长，以后多多指教", effect: { affection: 2, trust: 1 }, next: 'end', hint: "表现出尊重和礼貌" },
-                    { text: "那就不打扰你学习了", effect: { affection: 1 }, next: 'end', hint: "礼貌但距离感较强" }
-                ]
-            }
-        };
-        return rounds[round] || rounds[1];
-    }
-    
-    getGuYanLibraryInteraction(round) {
-        const rounds = {
-            1: {
-                description: "你再次在图书馆遇到了顾言，他正在整理一摞法律书籍，看到你时友善地点头致意。",
-                dialogue: "又见面了！看你这次找书找得很顺利。最近的学习怎么样？有什么学术上的困惑吗？",
-                choices: [
-                    { text: "有个专业问题想请教你", effect: { affection: 2, trust: 1 }, next: 2, hint: "求教会让他有被需要的感觉" },
-                    { text: "学习挺好的，你呢？", effect: { affection: 1 }, next: 2, hint: "礼貌的社交对话" },
-                    { text: "在准备期末考试，压力有点大", effect: { trust: 2 }, next: 2, hint: "敞开心扉分享压力" }
-                ]
-            },
-            2: {
-                description: "顾言认真地听着你的话，然后给出了很有见地的建议。",
-                dialogue: "我理解你的感受。其实学习的关键是找到适合自己的方法。我有一些学习笔记和资料，如果你需要的话可以借给你看看。",
-                choices: [
-                    { text: "真的吗？太感谢了！", effect: { affection: 3, trust: 2 }, next: 3, hint: "表现出真诚的感激" },
-                    { text: "你真是太好了，但这样会不会太麻烦你？", effect: { affection: 2, impression: 1 }, next: 3, hint: "体贴但略显客气" },
-                    { text: "我自己再试试吧", effect: { affection: 0 }, next: 3, hint: "可能让他觉得你太独立" }
-                ]
-            },
-            3: {
-                description: "顾言的眼神变得更加温和，显然很高兴能帮助到你。",
-                dialogue: "能帮到你我很开心。对了，下周我要去参加一个学术讲座，如果你有兴趣的话，我们可以一起去。相信你会有收获的。",
-                choices: [
-                    { text: "好啊！我很感兴趣", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "积极参与能加深关系" },
-                    { text: "听起来不错，让我考虑一下", effect: { affection: 1 }, next: 'end', hint: "表现出一定兴趣但不确定" },
-                    { text: "谢谢邀请，不过我可能没时间", effect: { affection: -1 }, next: 'end', hint: "拒绝可能让他失望" }
-                ]
-            }
-        };
-        return rounds[round] || rounds[1];
-    }
-    
-    // ===== 江澈故事线 =====
-    getJiangCheLibraryFirstMeeting(round) {
-        const rounds = {
-            1: {
-                description: "你在文学区域寻找一本经典小说，发现角落里有个文艺气质的男生正在安静地阅读诗集。阳光透过窗户洒在他身上，很有画面感。",
-                dialogue: "这里很安静对吧？我经常来这个角落读书，很少有人打扰。你也喜欢文学吗？我注意到你在看那一排的书。",
-                choices: [
-                    { text: "是的，我在找一些经典文学作品", effect: { affection: 2, impression: 2 }, next: 2, hint: "展现文学素养" },
-                    { text: "这里确实很安静，适合思考", effect: { affection: 1, trust: 1 }, next: 2, hint: "表现出对环境的欣赏" },
-                    { text: "不好意思打扰你了", effect: { affection: 0 }, next: 2, hint: "显得比较拘谨" }
-                ]
-            },
-            2: {
-                description: "江澈轻抚着手中的诗集，眼中带着温和的光芒。",
-                dialogue: "不会打扰的，能遇到同样爱好文学的人是很难得的事。我叫江澈，中文系的。你看起来有种特别的气质，很适合这样的环境。",
-                choices: [
-                    { text: "谢谢夸奖，我叫" + (this.gameState?.player?.name || '小雪'), effect: { affection: 2, trust: 1 }, next: 3, hint: "自然地介绍自己" },
-                    { text: "能推荐一些好的诗集吗？", effect: { affection: 2, impression: 2 }, next: 3, hint: "表现出学习的渴望" },
-                    { text: "你经常来这里吗？", effect: { affection: 1 }, next: 3, hint: "询问他的习惯" }
-                ]
-            },
-            3: {
-                description: "江澈的笑容很温暖，让人感到很舒适。他推荐了几本书给你。",
-                dialogue: "这几本诗集都很不错，有现代诗也有古典诗词。如果你有兴趣，我们可以一起讨论。文学就是要有人分享才更有意义。",
-                choices: [
-                    { text: "太好了！我很期待与你的讨论", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "建立深度连接" },
-                    { text: "谢谢你的推荐，我会认真阅读的", effect: { affection: 2, impression: 1 }, next: 'end', hint: "表现出认真的态度" },
-                    { text: "我先看看这些书，以后再联系", effect: { affection: 1 }, next: 'end', hint: "比较保守的回应" }
-                ]
-            }
-        };
-        return rounds[round] || rounds[1];
-    }
-    
-    getJiangCheLibraryInteraction(round) {
-        const rounds = {
-            1: {
-                description: "你在熟悉的角落找到了江澈，他正在写作，看到你时眼中闪过一丝惊喜。",
-                dialogue: "是你啊！真是巧合。我正在写一首关于校园秋天的诗，你来得正好，能帮我看看吗？有时候需要一个读者的视角。",
-                choices: [
-                    { text: "当然可以！我很荣幸能先读到你的作品", effect: { affection: 3, trust: 1 }, next: 2, hint: "表现出对他创作的重视" },
-                    { text: "虽然我不太懂诗，但愿意听听", effect: { affection: 2, impression: 1 }, next: 2, hint: "谦虚但愿意尝试" },
-                    { text: "我怕给不了专业意见", effect: { affection: 1 }, next: 2, hint: "过于谦虚可能显得不自信" }
-                ]
-            },
-            2: {
-                description: "江澈轻柔地朗读了他的诗作，他的声音很好听，诗的意境也很美。",
-                dialogue: "这首诗写的是梧桐叶落的意境，想表达时光流逝中的美好。你觉得怎么样？有什么感受吗？",
-                choices: [
-                    { text: "很美，我仿佛看到了落叶纷飞的画面", effect: { affection: 3, impression: 2 }, next: 3, hint: "用心感受并表达出来" },
-                    { text: "你的声音很好听，很有感染力", effect: { affection: 2, trust: 1 }, next: 3, hint: "注意到他的个人魅力" },
-                    { text: "写得不错，但我不太懂诗的技巧", effect: { affection: 1 }, next: 3, hint: "诚实但可能显得不够投入" }
-                ]
-            },
-            3: {
-                description: "江澈看起来很受鼓舞，眼中有种创作者被理解的光芒。",
-                dialogue: "谢谢你的感受，这让我觉得写作是有意义的。你知道吗？有时候写作会很孤独，能有人理解真是太好了。下次如果我有新作品，还能分享给你吗？",
-                choices: [
-                    { text: "当然！我很期待你的新作品", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "成为他的文学知音" },
-                    { text: "我会很认真地听的", effect: { affection: 2, trust: 1 }, next: 'end', hint: "表现出认真的态度" },
-                    { text: "如果有时间的话", effect: { affection: 1 }, next: 'end', hint: "回应比较保守" }
-                ]
-            }
-        };
-        return rounds[round] || rounds[1];
-    }
-    
-    // ===== 简化其他角色故事（先提供基础框架）=====
-    getSuYunShenLibraryFirstMeeting(round) {
-        return {
-            description: "你遇到了温文尔雅的苏云深...",
-            dialogue: "很高兴认识你...",
-            choices: [
-                { text: "选择1", effect: { affection: 2 }, next: 2 },
-                { text: "选择2", effect: { affection: 1 }, next: 2 },
-                { text: "选择3", effect: { affection: 0 }, next: 'end' }
-            ]
-        };
-    }
-    
-    getSuYunShenLibraryInteraction(round) {
-        return {
-            description: "与苏云深的进一步交流...",
-            dialogue: "我们的关系在加深...",
-            choices: [
-                { text: "继续", effect: { affection: 2 }, next: 'end' }
-            ]
-        };
-    }
-    
-    // ===== 林舟体育故事线 =====
-    getLinZhouSportsFirstMeeting(round) {
-        const rounds = {
-            1: {
-                description: "你正在篮球场边的小径上走着，突然一个篮球朝你滚过来。你弯腰捡起球，抬头就看到一个阳光男孩跑了过来。",
-                dialogue: "不好意思不好意思！球跑到你那边了。咦？你是新生吧？我叫林舟，体育系的。谢谢你帮我捡球！",
-                choices: [
-                    { text: "没关系，我叫" + (this.gameState?.player?.name || '小雪'), effect: { affection: 2 }, next: 2, hint: "友善地自我介绍" },
-                    { text: "你怎么知道我是新生？", effect: { affection: 1 }, next: 2, hint: "表现出好奇心" },
-                    { text: "小心一点，别砸到人", effect: { affection: 0 }, next: 2, hint: "可能显得有些严厉" }
-                ]
-            },
-            2: {
-                description: "林舟接过篮球，脸上带着歉意的笑容，你能感受到他身上散发的运动员特有的阳光气息。",
-                dialogue: "哈哈，因为你看起来还有点紧张，像刚入学的样子。别担心，大学生活会很有趣的！你是什么专业的？",
-                choices: [
-                    { text: "我是" + (this.gameState?.player?.major || '商学') + "专业的", effect: { affection: 2, trust: 1 }, next: 3, hint: "分享专业信息" },
-                    { text: "我确实还在熟悉环境", effect: { trust: 2 }, next: 3, hint: "坦承地表达状态" },
-                    { text: "你很了解新生呢", effect: { affection: 1 }, next: 3, hint: "转移话题的回应" }
-                ]
-            },
-            3: {
-                description: "林舟把篮球抱在怀里，真诚地看着你。",
-                dialogue: "太好了！如果有什么不懂的尽管问我，我已经在这里待了一年了。对了，如果你有兴趣的话，欢迎来看我们的篮球比赛！",
-                choices: [
-                    { text: "谢谢你，林舟。我会去看你比赛的", effect: { affection: 3, trust: 2, impression: 1 }, next: 'end', hint: "积极响应邀请" },
-                    { text: "我会考虑去看比赛的", effect: { affection: 2 }, next: 'end', hint: "表现出一定兴趣" },
-                    { text: "有时间的话", effect: { affection: 1 }, next: 'end', hint: "比较敷衍的回应" }
-                ]
-            }
-        };
-        return rounds[round] || rounds[1];
-    }
-    
-    getLinZhouSportsInteraction(round) {
-        return {
-            description: "再次遇到林舟，他刚训练完...",
-            dialogue: "又见面了！要不要一起运动？",
-            choices: [
-                { text: "好的", effect: { affection: 2 }, next: 'end' }
-            ]
-        };
-    }
-    
-    // ===== 为其他角色添加简化版本（可以后续扩展）=====
-    getSongZhiNanSportsFirstMeeting(round) { return this.getDefaultStory('宋之南', '体育活动'); }
-    getSongZhiNanSportsInteraction(round) { return this.getDefaultStory('宋之南', '体育互动'); }
-    getXiaoRanSportsFirstMeeting(round) { return this.getDefaultStory('萧然', '体育活动'); }
-    getXiaoRanSportsInteraction(round) { return this.getDefaultStory('萧然', '体育互动'); }
-    
-    getZhouYiChenClubFirstMeeting(round) { return this.getDefaultStory('周奕辰', '社团活动'); }
-    getZhouYiChenClubInteraction(round) { return this.getDefaultStory('周奕辰', '社团互动'); }
-    getTangYanClubFirstMeeting(round) { return this.getDefaultStory('唐言', '社团活动'); }
-    getTangYanClubInteraction(round) { return this.getDefaultStory('唐言', '社团互动'); }
-    getJiangCheClubFirstMeeting(round) { return this.getDefaultStory('江澈', '社团活动'); }
-    getJiangCheClubInteraction(round) { return this.getDefaultStory('江澈', '社团互动'); }
-    
-    getSongZhiNanWalkFirstMeeting(round) { return this.getDefaultStory('宋之南', '校园漫步'); }
-    getSongZhiNanWalkInteraction(round) { return this.getDefaultStory('宋之南', '漫步互动'); }
-    getSuYunShenWalkFirstMeeting(round) { return this.getDefaultStory('苏云深', '校园漫步'); }
-    getSuYunShenWalkInteraction(round) { return this.getDefaultStory('苏云深', '漫步互动'); }
-    getXiaoRanWalkFirstMeeting(round) { return this.getDefaultStory('萧然', '校园漫步'); }
-    getXiaoRanWalkInteraction(round) { return this.getDefaultStory('萧然', '漫步互动'); }
-    
-    getLinZhouCafeteriaFirstMeeting(round) { return this.getDefaultStory('林舟', '食堂用餐'); }
-    getLinZhouCafeteriaInteraction(round) { return this.getDefaultStory('林舟', '用餐互动'); }
-    getZhouYiChenCafeteriaFirstMeeting(round) { return this.getDefaultStory('周奕辰', '食堂用餐'); }
-    getZhouYiChenCafeteriaInteraction(round) { return this.getDefaultStory('周奕辰', '用餐互动'); }
-    getTangYanCafeteriaFirstMeeting(round) { return this.getDefaultStory('唐言', '食堂用餐'); }
-    getTangYanCafeteriaInteraction(round) { return this.getDefaultStory('唐言', '用餐互动'); }
-    
-    // 默认故事模板
-    getDefaultStory(characterName, activityType) {
-        return {
-            description: `你在${activityType}中遇到了${characterName}，这是一次特别的相遇...`,
-            dialogue: "很高兴认识你！",
-            choices: [
-                { text: "我也很高兴认识你", effect: { affection: 2, trust: 1 }, next: 2 },
-                { text: "你好", effect: { affection: 1 }, next: 2 },
-                { text: "嗯", effect: { affection: 0 }, next: 'end' }
-            ]
-        };
     }
 
     updateWeekStatsByActivity(day) {

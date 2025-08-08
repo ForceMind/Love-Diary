@@ -802,6 +802,204 @@ const gameData = {
             title: "甜蜜恋人", 
             description: "你找到了属于自己的真爱..."
         }
+    },
+
+    // ===== 新故事系统数据 =====
+    storyData: {
+        // 图书馆学习故事线
+        library_study: {
+            顾言: {
+                first_meeting: {
+                    1: {
+                        description: "你在图书馆寻找专业课的参考书籍，在书架间转了好久都没找到。这时一个戴眼镜的男生走过来，看起来很有学者气质。",
+                        dialogue: "需要帮忙吗？看你在这一排找了很久。我是法学系的顾言，对图书馆的书籍分布比较熟悉。",
+                        choices: [
+                            { text: "谢谢！我在找专业课的参考书", effect: { affection: 2, impression: 1 }, next: 2, hint: "表现出对学习的重视" },
+                            { text: "你看起来很眼熟，是学生会的吗？", effect: { affection: 1, trust: 1 }, next: 2, hint: "表现出对他身份的好奇" },
+                            { text: "不用了，我自己能找到", effect: { affection: -1 }, next: 2, hint: "可能显得有点冷淡" }
+                        ]
+                    },
+                    2: {
+                        description: "顾言推了推眼镜，温和地笑了笑。他在书架间轻松地找到了你需要的书籍。",
+                        dialogue: "你说得对，我确实在学生会工作。这些专业书籍确实不好找，图书管理员经常放错位置。你是哪个专业的？",
+                        choices: [
+                            { text: "我是商学专业的，谢谢你的帮助", effect: { affection: 2, trust: 2 }, next: 3, hint: "真诚地表达感谢" },
+                            { text: "学生会的工作一定很忙吧？", effect: { affection: 1, impression: 1 }, next: 3, hint: "表现出对他的关心" },
+                            { text: "你为什么要帮助陌生人？", effect: { impression: -1 }, next: 3, hint: "可能让他觉得你多疑" }
+                        ]
+                    },
+                    3: {
+                        description: "顾言整理了一下手中的资料，眼神中闪烁着智慧的光芒。",
+                        dialogue: "帮助同学是我的责任，也是我的快乐。如果以后在学习上有什么困难，可以随时找我。对了，我经常在这个时间来图书馆，或许我们还会再遇见。",
+                        choices: [
+                            { text: "好的，我会记住的。希望能成为朋友", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "建立良好的第一印象" },
+                            { text: "谢谢学长，以后多多指教", effect: { affection: 2, trust: 1 }, next: 'end', hint: "表现出尊重和礼貌" },
+                            { text: "那就不打扰你学习了", effect: { affection: 1 }, next: 'end', hint: "礼貌但距离感较强" }
+                        ]
+                    }
+                },
+                interaction: {
+                    1: {
+                        description: "你再次在图书馆遇到了顾言，他正在整理一摞法律书籍，看到你时友善地点头致意。",
+                        dialogue: "又见面了！看你这次找书找得很顺利。最近的学习怎么样？有什么学术上的困惑吗？",
+                        choices: [
+                            { text: "有个专业问题想请教你", effect: { affection: 2, trust: 1 }, next: 2, hint: "求教会让他有被需要的感觉" },
+                            { text: "学习挺好的，你呢？", effect: { affection: 1 }, next: 2, hint: "礼貌的社交对话" },
+                            { text: "在准备期末考试，压力有点大", effect: { trust: 2 }, next: 2, hint: "敞开心扉分享压力" }
+                        ]
+                    },
+                    2: {
+                        description: "顾言认真地听着你的话，然后给出了很有见地的建议。",
+                        dialogue: "我理解你的感受。其实学习的关键是找到适合自己的方法。我有一些学习笔记和资料，如果你需要的话可以借给你看看。",
+                        choices: [
+                            { text: "真的吗？太感谢了！", effect: { affection: 3, trust: 2 }, next: 3, hint: "表现出真诚的感激" },
+                            { text: "你真是太好了，但这样会不会太麻烦你？", effect: { affection: 2, impression: 1 }, next: 3, hint: "体贴但略显客气" },
+                            { text: "我自己再试试吧", effect: { affection: 0 }, next: 3, hint: "可能让他觉得你太独立" }
+                        ]
+                    },
+                    3: {
+                        description: "顾言的眼神变得更加温和，显然很高兴能帮助到你。",
+                        dialogue: "能帮到你我很开心。对了，下周我要去参加一个学术讲座，如果你有兴趣的话，我们可以一起去。相信你会有收获的。",
+                        choices: [
+                            { text: "好啊！我很感兴趣", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "积极参与能加深关系" },
+                            { text: "听起来不错，让我考虑一下", effect: { affection: 1 }, next: 'end', hint: "表现出一定兴趣但不确定" },
+                            { text: "谢谢邀请，不过我可能没时间", effect: { affection: -1 }, next: 'end', hint: "拒绝可能让他失望" }
+                        ]
+                    }
+                }
+            },
+            江澈: {
+                first_meeting: {
+                    1: {
+                        description: "你在图书馆里寻找安静的座位，走到文学区域附近时，注意到角落里有个文艺气质的男生正专注地在笔记本上写着什么。当你经过时，他似乎察觉到了脚步声，抬起头来。",
+                        dialogue: "啊，不好意思...是我占用的位置太多了吗？这些书和资料散得有点乱。如果你想在这边坐的话，我可以收拾一下。",
+                        choices: [
+                            { text: "没关系，我只是路过看看", effect: { affection: 1 }, next: 2, hint: "礼貌但保持距离" },
+                            { text: "你在写什么呢？看起来很专注", effect: { affection: 2, trust: 1 }, next: 2, hint: "表现出对他的好奇" },
+                            { text: "这里看起来很安静，适合学习", effect: { affection: 1, impression: 1 }, next: 2, hint: "认同这个环境" }
+                        ]
+                    },
+                    2: {
+                        description: "江澈有些不好意思地收拾了一下桌面，你注意到他的笔记本上写着一些优美的文字。他的动作很文雅，给人一种温和的感觉。",
+                        dialogue: "其实我在写一些...嗯，算是随笔吧。有时候在这种安静的环境里，会突然有一些感悟想要记录下来。我叫江澈，中文系的。你也经常来图书馆吗？",
+                        choices: [
+                            { text: "我叫小雪，刚开始经常来图书馆", effect: { affection: 2, trust: 1 }, next: 3, hint: "友善地自我介绍" },
+                            { text: "随笔？听起来很有意思", effect: { affection: 2, impression: 2 }, next: 3, hint: "对他的写作感兴趣" },
+                            { text: "偶尔来，主要是找资料", effect: { affection: 1 }, next: 3, hint: "比较实用性的回答" }
+                        ]
+                    },
+                    3: {
+                        description: "江澈的眼中闪过一丝惊喜，似乎很高兴遇到愿意聊天的人。他整理好笔记本，显得更加放松了。",
+                        dialogue: "能在这里遇到你真好。有时候一个人写东西会觉得孤单，没有人分享这些想法。如果你不介意的话，这张桌子挺大的，我们可以一起用。当然，我保证会很安静的。",
+                        choices: [
+                            { text: "好啊，谢谢你！我也需要一个安静的地方", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "接受邀请，建立友善关系" },
+                            { text: "那就太感谢了，希望不会打扰到你写作", effect: { affection: 2, impression: 1 }, next: 'end', hint: "接受但很体贴" },
+                            { text: "我还要到其他地方找书，改天吧", effect: { affection: 1 }, next: 'end', hint: "礼貌地拒绝" }
+                        ]
+                    }
+                },
+                interaction: {
+                    1: {
+                        description: "你在熟悉的角落找到了江澈，他正在写作，看到你时眼中闪过一丝惊喜。",
+                        dialogue: "是你啊！真是巧合。我正在写一首关于校园秋天的诗，你来得正好，能帮我看看吗？有时候需要一个读者的视角。",
+                        choices: [
+                            { text: "当然可以！我很荣幸能先读到你的作品", effect: { affection: 3, trust: 1 }, next: 2, hint: "表现出对他创作的重视" },
+                            { text: "虽然我不太懂诗，但愿意听听", effect: { affection: 2, impression: 1 }, next: 2, hint: "谦虚但愿意尝试" },
+                            { text: "我怕给不了专业意见", effect: { affection: 1 }, next: 2, hint: "过于谦虚可能显得不自信" }
+                        ]
+                    },
+                    2: {
+                        description: "江澈轻柔地朗读了他的诗作，他的声音很好听，诗的意境也很美。",
+                        dialogue: "这首诗写的是梧桐叶落的意境，想表达时光流逝中的美好。你觉得怎么样？有什么感受吗？",
+                        choices: [
+                            { text: "很美，我仿佛看到了落叶纷飞的画面", effect: { affection: 3, impression: 2 }, next: 3, hint: "用心感受并表达出来" },
+                            { text: "你的声音很好听，很有感染力", effect: { affection: 2, trust: 1 }, next: 3, hint: "注意到他的个人魅力" },
+                            { text: "写得不错，但我不太懂诗的技巧", effect: { affection: 1 }, next: 3, hint: "诚实但可能显得不够投入" }
+                        ]
+                    },
+                    3: {
+                        description: "江澈看起来很受鼓舞，眼中有种创作者被理解的光芒。",
+                        dialogue: "谢谢你的感受，这让我觉得写作是有意义的。你知道吗？有时候写作会很孤独，能有人理解真是太好了。下次如果我有新作品，还能分享给你吗？",
+                        choices: [
+                            { text: "当然！我很期待你的新作品", effect: { affection: 3, trust: 2, impression: 2 }, next: 'end', hint: "成为他的文学知音" },
+                            { text: "我会很认真地听的", effect: { affection: 2, trust: 1 }, next: 'end', hint: "表现出认真的态度" },
+                            { text: "如果有时间的话", effect: { affection: 1 }, next: 'end', hint: "回应比较保守" }
+                        ]
+                    }
+                }
+            },
+            苏云深: {
+                first_meeting: {
+                    1: {
+                        description: "你遇到了温文尔雅的苏云深...",
+                        dialogue: "很高兴认识你...",
+                        choices: [
+                            { text: "选择1", effect: { affection: 2 }, next: 2 },
+                            { text: "选择2", effect: { affection: 1 }, next: 2 },
+                            { text: "选择3", effect: { affection: 0 }, next: 'end' }
+                        ]
+                    }
+                },
+                interaction: {
+                    1: {
+                        description: "与苏云深的进一步交流...",
+                        dialogue: "我们的关系在加深...",
+                        choices: [
+                            { text: "继续", effect: { affection: 2 }, next: 'end' }
+                        ]
+                    }
+                }
+            }
+        },
+
+        // 体育活动故事线
+        sports_activities: {
+            林舟: {
+                first_meeting: {
+                    1: {
+                        description: "你正在篮球场边的小径上走着，突然一个篮球朝你滚过来。你弯腰捡起球，抬头就看到一个阳光男孩跑了过来。",
+                        dialogue: "不好意思不好意思！球跑到你那边了。咦？你是新生吧？我叫林舟，体育系的。谢谢你帮我捡球！",
+                        choices: [
+                            { text: "没关系，我叫小雪", effect: { affection: 2 }, next: 2, hint: "友善地自我介绍" },
+                            { text: "你怎么知道我是新生？", effect: { affection: 1 }, next: 2, hint: "表现出好奇心" },
+                            { text: "小心一点，别砸到人", effect: { affection: 0 }, next: 2, hint: "可能显得有些严厉" }
+                        ]
+                    },
+                    2: {
+                        description: "林舟接过篮球，脸上带着歉意的笑容，你能感受到他身上散发的运动员特有的阳光气息。",
+                        dialogue: "哈哈，因为你看起来还有点紧张，像刚入学的样子。别担心，大学生活会很有趣的！你是什么专业的？",
+                        choices: [
+                            { text: "我是商学专业的", effect: { affection: 2, trust: 1 }, next: 3, hint: "分享专业信息" },
+                            { text: "我确实还在熟悉环境", effect: { trust: 2 }, next: 3, hint: "坦承地表达状态" },
+                            { text: "你很了解新生呢", effect: { affection: 1 }, next: 3, hint: "转移话题的回应" }
+                        ]
+                    },
+                    3: {
+                        description: "林舟把篮球抱在怀里，真诚地看着你。",
+                        dialogue: "太好了！如果有什么不懂的尽管问我，我已经在这里待了一年了。对了，如果你有兴趣的话，欢迎来看我们的篮球比赛！",
+                        choices: [
+                            { text: "谢谢你，林舟。我会去看你比赛的", effect: { affection: 3, trust: 2, impression: 1 }, next: 'end', hint: "积极响应邀请" },
+                            { text: "我会考虑去看比赛的", effect: { affection: 2 }, next: 'end', hint: "表现出一定兴趣" },
+                            { text: "有时间的话", effect: { affection: 1 }, next: 'end', hint: "比较敷衍的回应" }
+                        ]
+                    }
+                },
+                interaction: {
+                    1: {
+                        description: "再次遇到林舟，他刚训练完...",
+                        dialogue: "又见面了！要不要一起运动？",
+                        choices: [
+                            { text: "好的", effect: { affection: 2 }, next: 'end' }
+                        ]
+                    }
+                }
+            }
+        },
+
+        // 其他活动的基础框架（可以后续扩展）
+        art_club: {},
+        campus_walk: {},
+        cafeteria_meal: {}
     }
 };
 
