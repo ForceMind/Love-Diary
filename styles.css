@@ -83,10 +83,13 @@ body {
 
 /* 角色创建界面 */
 #character-creation {
-    display: flex;
+    background: linear-gradient(135deg, #ffeef8 0%, #f0e6ff 100%);
+}
+
+#character-creation.active {
+    display: flex !important;
     justify-content: center;
     align-items: center;
-    background: linear-gradient(135deg, #ffeef8 0%, #f0e6ff 100%);
 }
 
 .creation-container {

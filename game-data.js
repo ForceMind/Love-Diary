@@ -5,49 +5,49 @@ const gameData = {
             name: "顾言",
             title: "冷酷学长",
             description: "计算机系研究生，外表冷酷但内心温柔",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23e8f4fd'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E顾言%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-guyan.svg"
         },
         林舟: {
             name: "林舟",
             title: "青梅竹马",
             description: "从小一起长大的邻家男孩，现在是体育系学生",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23f0f8e8'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E林舟%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-linzhou.svg"
         },
         宋之南: {
             name: "宋之南",
             title: "神秘钢琴老师",
             description: "音乐学院的年轻钢琴老师，气质优雅神秘",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23f8f0e8'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E宋之南%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-songzhinan.svg"
         },
         周奕辰: {
             name: "周奕辰",
             title: "阳光学弟",
             description: "大一新生，性格开朗活泼，总是充满活力",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23fff8e8'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E周奕辰%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-zhouyichen.svg"
         },
         江澈: {
             name: "江澈",
             title: "文艺社长",
             description: "文学社社长，温文尔雅的诗人气质，总是在图书馆写作",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23f5f0e8'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E江澈%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-jiangche.svg"
         },
         苏云深: {
             name: "苏云深",
             title: "医学天才",
             description: "医学院的天才学生，成熟稳重，有着治愈系的温柔",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23e8f5f0'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E苏云深%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-suyunshen.svg"
         },
         唐言: {
             name: "唐言",
             title: "霸道总裁",
             description: "商学院学生会主席，家境优渥，外表强势内心柔软",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23f8e8f0'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E唐言%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-tangyan.svg"
         },
         萧然: {
             name: "萧然",
             title: "神秘画家",
             description: "美术系的才华横溢的画家，性格孤僻但内心热情",
-            portrait: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='200' viewBox='0 0 150 200'%3E%3Crect width='150' height='200' fill='%23f0e8f8'/%3E%3Ctext x='75' y='100' text-anchor='middle' font-family='Arial' font-size='16' fill='%23333'%3E萧然%3C/text%3E%3C/svg%3E"
+            portrait: "avatar-xiaoran.svg"
         }
     },
 

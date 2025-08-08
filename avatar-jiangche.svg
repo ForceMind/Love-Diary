@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 150 150">
+  <!-- 江澈 - 清雅文艺型 -->
+  <defs>
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f5e8;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c8e6c9;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 背景 -->
+  <circle cx="75" cy="75" r="75" fill="url(#bg5)"/>
+  
+  <!-- 脸部轮廓 -->
+  <ellipse cx="75" cy="85" rx="31" ry="37" fill="#fdbcb4"/>
+  
+  <!-- 头发 - 清爽短发 -->
+  <path d="M44,68 Q75,25 106,68 Q102,40 75,30 Q48,40 44,68" fill="#5d4037"/>
+  <path d="M55,55 Q65,50 70,58" fill="#5d4037"/>
+  
+  <!-- 眼睛 - 温和眼神 -->
+  <ellipse cx="65" cy="75" rx="4" ry="3" fill="#2c3e50"/>
+  <ellipse cx="85" cy="75" rx="4" ry="3" fill="#2c3e50"/>
+  <circle cx="66" cy="74" r="1" fill="white"/>
+  <circle cx="86" cy="74" r="1" fill="white"/>
+  
+  <!-- 眉毛 -->
+  <path d="M60,69 Q65,67 70,69" fill="none" stroke="#5d4037" stroke-width="2" stroke-linecap="round"/>
+  <path d="M80,69 Q85,67 90,69" fill="none" stroke="#5d4037" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- 嘴巴 - 温和微笑 -->
+  <path d="M69,94 Q75,98 81,94" fill="none" stroke="#d32f2f" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- 茶杯装饰 -->
+  <ellipse cx="115" cy="125" rx="8" ry="6" fill="#8bc34a"/>
+  <rect x="112" y="125" width="6" height="3" fill="#689f38"/>
+  <path d="M123,122 Q127,122 127,125 Q127,128 123,128" fill="none" stroke="#689f38" stroke-width="2"/>
+  
+  <!-- 叶子装饰 -->
+  <path d="M25,120 Q30,115 35,120 Q30,125 25,120" fill="#4caf50"/>
+</svg>
