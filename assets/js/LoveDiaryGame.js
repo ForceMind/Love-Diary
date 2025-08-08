@@ -8,9 +8,13 @@ class LoveDiaryGame {
         this.engine = new GameEngine();
         this.logic = new GameLogic(this.engine);
         this.storyManager = new StoryManager(this.logic);
+    this.uiManager = new UIManager(this.logic);
+    this.dynamicGenerator = new DynamicStoryGenerator(this.logic);
         
         // 设置相互引用
         this.logic.setStoryManager(this.storyManager);
+    this.logic.setUIManager(this.uiManager);
+    this.dynamicGenerator.generateIfNeeded();
         
         // 绑定全局引用（保持兼容性）
         window.game = this;

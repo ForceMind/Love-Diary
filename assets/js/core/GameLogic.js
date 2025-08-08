@@ -9,6 +9,7 @@ class GameLogic {
         this.selectedDay = null;
         this.currentStory = null;
         this.storyManager = null; // 稍后设置
+    this.ui = null; // UI 管理器
     }
 
     /**
@@ -16,6 +17,11 @@ class GameLogic {
      */
     setStoryManager(storyManager) {
         this.storyManager = storyManager;
+    }
+
+    // 设置 UI 管理器
+    setUIManager(uiManager) {
+        this.ui = uiManager;
     }
 
     /**
@@ -48,6 +54,7 @@ class GameLogic {
             unlockedEndings: [],
             currentEnding: null,
             completedStorylines: [],
+            specialEvents: [],
             
             // 周统计
             weekStats: {
@@ -168,6 +175,7 @@ class GameLogic {
             new: relationship,
             changes: changes
         });
+    this.updateUI();
     }
 
     /**
@@ -182,7 +190,30 @@ class GameLogic {
         }
         
         this.selectedDay = day;
-        this.showActivityMenu(day);
+        // 直接自动选一个活动（含课程/背景探索概率）
+        this.autoExecuteDayActivity(day);
+    }
+
+    // 自动执行活动
+    autoExecuteDayActivity(day) {
+        const activities = this.getAvailableActivities(day);
+        const pool = [...activities.map(a => ({ type: 'activity', ref: a }))];
+        // 添加课程权重（基础/专业 早期更常见）
+        const grade = this.gameState.player.grade;
+        const subjects = Object.entries(GameData.academicSystem.subjects)
+            .filter(([k]) => !(k === '高级课程' && grade < 3) && !(k === '研究项目' && grade < 4));
+        subjects.forEach(([name, s]) => pool.push({ type: 'course', ref: { name, data: s } }));
+
+        if (pool.length === 0) {
+            this.engine.showNotification('当前无可执行活动', 'warning');
+            return;
+        }
+        const choice = pool[Math.floor(Math.random() * pool.length)];
+        if (choice.type === 'activity') {
+            this.startActivity(choice.ref.id, day);
+        } else if (choice.type === 'course') {
+            this.studyCourse(choice.ref.name, { auto: true });
+        }
     }
 
     /**
@@ -438,10 +469,11 @@ class GameLogic {
     startCharacterStory(characterName, activityId) {
         const isMet = this.gameState.characterMeetStatus[characterName]?.met;
         const storyType = isMet ? 'interaction' : 'first_meeting';
-        
-        // 从故事数据中获取故事内容
-        const storyInstance = new StoryManager(this);
-        storyInstance.startStory(characterName, activityId, storyType);
+        if (!this.storyManager) {
+            console.warn('StoryManager 未初始化，创建临时实例');
+            this.storyManager = new StoryManager(this);
+        }
+        this.storyManager.startStory(characterName, activityId, storyType);
     }
 
     /**
@@ -453,6 +485,7 @@ class GameLogic {
         
         // 更新周统计
         this.updateWeekStats();
+    this.updateUI();
         
         // 检查是否需要进入下一周
         if (this.gameState.actionPoints <= 0) {
@@ -565,7 +598,7 @@ class GameLogic {
         if (mainMenu) mainMenu.classList.remove('active');
         if (gameScreen) gameScreen.classList.add('active');
         
-        this.updateGameUI();
+    this.updateUI();
     }
 
     showMainMenu() {
@@ -576,39 +609,15 @@ class GameLogic {
         if (mainMenu) mainMenu.classList.add('active');
     }
 
-    updateGameUI() {
-        // 更新玩家信息显示
-        this.updatePlayerInfo();
-        // 更新行动点数显示
-        this.updateActionPoints();
-        // 更新周信息显示
-        this.updateWeekInfo();
-    }
-
-    updatePlayerInfo() {
-        const playerNameElement = document.querySelector('.player-name');
-        const playerMajorElement = document.querySelector('.player-major');
-        const playerGradeElement = document.querySelector('.player-grade');
-        
-        if (playerNameElement) playerNameElement.textContent = this.gameState.player.name;
-        if (playerMajorElement) playerMajorElement.textContent = this.gameState.player.major;
-        if (playerGradeElement) {
-            const gradeNames = { 1: '大一', 2: '大二', 3: '大三', 4: '大四' };
-            playerGradeElement.textContent = gradeNames[this.gameState.player.grade];
-        }
-    }
-
-    updateActionPoints() {
-        const actionPointsElement = document.querySelector('.action-points');
-        if (actionPointsElement) {
-            actionPointsElement.textContent = `${this.gameState.actionPoints}/${this.gameState.maxActionPoints}`;
-        }
-    }
-
-    updateWeekInfo() {
-        const weekElement = document.querySelector('.current-week');
-        if (weekElement) {
-            weekElement.textContent = `第${this.gameState.currentWeek}周`;
+    // 统一 UI 更新
+    updateUI() {
+        if (this.ui) {
+            this.ui.updateAll();
+        } else {
+            const ap = document.getElementById('current-actions');
+            if (ap) ap.textContent = `${this.gameState.actionPoints}/${this.gameState.maxActionPoints}`;
+            const w = document.getElementById('current-week');
+            if (w) w.textContent = `第${this.gameState.currentWeek}周`;
         }
     }
 
@@ -769,8 +778,8 @@ class GameLogic {
         }
         
         // 消耗行动点
-        this.gameState.actionPoints--;
-        this.updateUI();
+    this.gameState.actionPoints--;
+    this.updateUI();
         
         // 开始背景探索故事
         this.storyManager.startBackgroundStory(characterName, storyType);
@@ -975,7 +984,7 @@ class GameLogic {
     /**
      * 学习课程
      */
-    studyCourse(courseType) {
+    studyCourse(courseType, options = {}) {
         const course = GameData.academicSystem.subjects[courseType];
         if (!course) return;
 
@@ -996,7 +1005,36 @@ class GameLogic {
         this.updatePlayerStats({ 学习: 5, 专注: 3, 知识: course.knowledgeGain / 10 });
         
         this.updateUI();
-        this.showStudyResult(courseType, course);
+        if (options.auto) {
+            // 自动模式：直接展示精简提示并结束本次行动
+            this.engine.showModal('scenario-modal', {
+                onShow: (modal) => {
+                    const titleElement = modal.querySelector('.scenario-title');
+                    const descElement = modal.querySelector('.scenario-description');
+                    const choicesElement = modal.querySelector('.scenario-choices');
+                    if (titleElement) titleElement.textContent = '学习完成';
+                    if (descElement) {
+                        descElement.innerHTML = `<div style="text-align:center;padding:20px;">
+                            <div style=\"font-size:48px;margin-bottom:10px;\">📖</div>
+                            <p style=\"color:#555;line-height:1.6;\">你完成了 <strong>${courseType}</strong>，知识值 +${course.knowledgeGain}</p>
+                        </div>`;
+                    }
+                    if (choicesElement) {
+                        choicesElement.innerHTML = '';
+                        const btn = document.createElement('button');
+                        btn.className = 'choice-btn';
+                        btn.textContent = '继续';
+                        btn.addEventListener('click', () => {
+                            this.engine.closeModal('scenario-modal');
+                            this.finishActivity();
+                        });
+                        choicesElement.appendChild(btn);
+                    }
+                }
+            });
+        } else {
+            this.showStudyResult(courseType, course);
+        }
     }
 
     /**
@@ -1058,7 +1096,7 @@ class GameLogic {
         const nextGradeInfo = GameData.academicSystem.grades[currentGrade + 1];
         
         // 检查是否到了学期末
-        if (this.gameState.week % 8 === 0 && !this.gameState.player.isExamTime) {
+    if (this.gameState.currentWeek % 8 === 0 && !this.gameState.player.isExamTime) {
             if (nextGradeInfo && this.gameState.player.knowledge >= nextGradeInfo.requiredKnowledge) {
                 this.gameState.player.isExamTime = true;
                 this.showExamNotice();
@@ -1360,7 +1398,7 @@ class GameLogic {
             
             // 影响与所有角色的关系
             Object.keys(this.gameState.characterRelationships).forEach(characterName => {
-                this.updateRelationship(characterName, { affection: -5, trust: -3 });
+                this.updateCharacterRelationship(characterName, { affection: -5, trust: -3 });
             });
             
             this.showRepeatGrade();
@@ -1510,3 +1548,32 @@ class GameLogic {
         });
     }
 }
+
+// 补充：独自活动降级逻辑，防止报错
+GameLogic.prototype.startSoloActivity = function(activityId) {
+    this.engine.showModal('scenario-modal', {
+        onShow: (modal) => {
+            const titleElement = modal.querySelector('.scenario-title');
+            const descElement = modal.querySelector('.scenario-description');
+            const choicesElement = modal.querySelector('.scenario-choices');
+            if (titleElement) titleElement.textContent = '活动完成';
+            if (descElement) {
+                descElement.innerHTML = `<div style="text-align:center;padding:20px;">
+                    <div style=\"font-size:48px;margin-bottom:10px;\">🕒</div>
+                    <p style=\"color:#555;line-height:1.6;\">你完成了 <strong>${activityId}</strong>，度过了平静的一天。</p>
+                </div>`;
+            }
+            if (choicesElement) {
+                choicesElement.innerHTML = '';
+                const btn = document.createElement('button');
+                btn.className = 'choice-btn';
+                btn.textContent = '继续';
+                btn.addEventListener('click', () => {
+                    this.engine.closeModal('scenario-modal');
+                    this.finishActivity();
+                });
+                choicesElement.appendChild(btn);
+            }
+        }
+    });
+};
