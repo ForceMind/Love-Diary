@@ -5,12 +5,13 @@ class LoveDiaryGame {
             player: {
                 name: '',
                 major: '',
-                personality: ''
+                personality: '',
+                grade: 1  // 年级：1=大一, 2=大二, 3=大三, 4=大四
             },
             currentWeek: 1,
             currentDay: 1,
-            actionPoints: 5,
-            maxActionPoints: 5,
+            actionPoints: 2,  // 大一开始2点
+            maxActionPoints: 2,
             characterRelationships: {},
             achievements: [],
             unlockedEndings: [],
@@ -181,6 +182,98 @@ class LoveDiaryGame {
         console.log(`好感度: ${oldAffection} -> ${relationship.affection}`);
         console.log(`信任度: ${oldTrust} -> ${relationship.trust}`);
         console.log(`=== 关系更新完成 ===`);
+    }
+
+    // 年级系统
+    calculateGrade() {
+        // 根据周数计算年级：每20周升一年级
+        const weeksPerGrade = 20;
+        const grade = Math.min(4, Math.floor((this.gameState.currentWeek - 1) / weeksPerGrade) + 1);
+        return grade;
+    }
+    
+    updateGradeAndActionPoints() {
+        const newGrade = this.calculateGrade();
+        const oldGrade = this.gameState.player.grade;
+        
+        if (newGrade !== oldGrade) {
+            this.gameState.player.grade = newGrade;
+            
+            // 根据年级设置行动点数
+            const gradeActionPoints = {
+                1: 2,  // 大一：2点
+                2: 3,  // 大二：3点  
+                3: 5,  // 大三：5点
+                4: 7   // 大四：7点
+            };
+            
+            this.gameState.maxActionPoints = gradeActionPoints[newGrade];
+            this.gameState.actionPoints = this.gameState.maxActionPoints; // 升级时补满行动点数
+            
+            // 显示升级提示
+            this.showGradeUpNotification(oldGrade, newGrade);
+        }
+    }
+    
+    showGradeUpNotification(oldGrade, newGrade) {
+        const gradeNames = {
+            1: '大一',
+            2: '大二', 
+            3: '大三',
+            4: '大四'
+        };
+        
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        if (titleElement) titleElement.textContent = '升级了！';
+        
+        if (descElement) {
+            descElement.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">🎓</div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #ff6b9d; margin-bottom: 15px;">恭喜升级！</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                            经过努力的学习和生活，你从<strong>${gradeNames[oldGrade]}</strong>升级到了<strong>${gradeNames[newGrade]}</strong>！
+                        </p>
+                        <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 8px;">
+                            <p style="color: #2e7d32; font-weight: 500; margin: 0;">
+                                ✨ 你的每周行动点数增加到了 ${this.gameState.maxActionPoints} 点！<br>
+                                现在可以进行更多的活动了！
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'choice-btn';
+            continueBtn.textContent = '继续游戏';
+            continueBtn.addEventListener('click', () => {
+                this.closeModal('scenario-modal');
+            });
+            
+            choicesElement.appendChild(continueBtn);
+        }
+        
+        this.showModal('scenario-modal');
+    }
+    
+    getGradeName() {
+        const gradeNames = {
+            1: '大一',
+            2: '大二',
+            3: '大三', 
+            4: '大四'
+        };
+        return gradeNames[this.gameState.player.grade] || '大一';
     }
 
     setupModalEventListeners() {
@@ -357,10 +450,12 @@ class LoveDiaryGame {
     // 游戏流程控制
     startGame(playerData) {
         this.gameState.player = playerData;
+        // 初始化年级为大一
+        this.gameState.player.grade = 1;
         this.closeModal('character-creation-modal');
         
         // 检查是否是新游戏，如果是则显示开场故事线
-        if (this.gameState.currentWeek === 1 && this.gameState.actionPoints === 5) {
+        if (this.gameState.currentWeek === 1 && this.gameState.actionPoints === 2) {
             this.showIntroStoryline();
         } else {
             this.showGameScreen();
@@ -370,10 +465,16 @@ class LoveDiaryGame {
     
     // 新手引导故事线
     showIntroStoryline() {
+        console.log('开始显示新手引导');
         const modal = document.getElementById('scenario-modal');
         const titleElement = modal.querySelector('.scenario-title');
         const descElement = modal.querySelector('.scenario-description');
         const choicesElement = modal.querySelector('.scenario-choices');
+        
+        console.log('Modal元素:', modal);
+        console.log('Title元素:', titleElement);
+        console.log('Desc元素:', descElement);
+        console.log('Choices元素:', choicesElement);
         
         if (titleElement) titleElement.textContent = '新的开始';
         
@@ -390,7 +491,9 @@ class LoveDiaryGame {
                         <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
                             <p style="color: #1976d2; font-weight: 500; margin: 0;">
                                 💡 游戏玩法提示：<br>
-                                • 每周有5个行动点数<br>
+                                • 现在是大一，每周有2个行动点数<br>
+                                • 每20周升一年级，行动点数会增加<br>
+                                • 大二3点、大三5点、大四7点<br>
                                 • 点击不同日期进行各种活动<br>
                                 • 通过互动提升与角色的好感度<br>
                                 • 你的选择将影响故事的发展
@@ -408,13 +511,23 @@ class LoveDiaryGame {
         
         // 设置选择按钮
         if (choicesElement) {
+            console.log('找到选择按钮容器，开始创建按钮');
             choicesElement.innerHTML = '';
             
             const startBtn = document.createElement('button');
             startBtn.className = 'choice-btn';
             startBtn.textContent = '开始我的校园生活！';
             startBtn.style.background = 'linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)';
+            startBtn.style.color = 'white';
+            startBtn.style.padding = '15px 25px';
+            startBtn.style.borderRadius = '25px';
+            startBtn.style.border = 'none';
+            startBtn.style.fontSize = '16px';
+            startBtn.style.fontWeight = '600';
+            startBtn.style.cursor = 'pointer';
+            startBtn.style.width = '100%';
             startBtn.addEventListener('click', () => {
+                console.log('开始游戏按钮被点击');
                 this.closeModal('scenario-modal');
                 this.showGameScreen();
                 this.updateGameUI();
@@ -425,6 +538,9 @@ class LoveDiaryGame {
             });
             
             choicesElement.appendChild(startBtn);
+            console.log('按钮已添加到容器中');
+        } else {
+            console.error('未找到选择按钮容器');
         }
         
         this.showModal('scenario-modal');
@@ -522,14 +638,13 @@ class LoveDiaryGame {
         console.log('开始执行日期选择逻辑...');
         this.selectedDay = day;
         
-        // 消耗行动点数
-        this.gameState.actionPoints--;
-        console.log('消耗行动点，剩余:', this.gameState.actionPoints);
+        // 行动点数将在场景选择后消耗，这里不消耗
+        console.log('当前行动点数:', this.gameState.actionPoints);
         
         // 更新统计数据
         this.updateWeekStatsByActivity(day);
         
-        // 更新UI
+        // 更新UI  
         this.updateGameUI();
         
         // 根据日期随机遇到角色，而不是让玩家选择
@@ -615,7 +730,14 @@ class LoveDiaryGame {
         
         // 进入下一周
         this.gameState.currentWeek++;
-        this.gameState.actionPoints = this.gameState.maxActionPoints;
+        
+        // 检查年级升级
+        this.updateGradeAndActionPoints();
+        
+        // 如果没有升级，正常恢复行动点数
+        if (this.gameState.actionPoints !== this.gameState.maxActionPoints) {
+            this.gameState.actionPoints = this.gameState.maxActionPoints;
+        }
         
         // 重置周统计
         this.gameState.weekStats = {
@@ -1050,22 +1172,19 @@ class LoveDiaryGame {
         relationship.affection += affectionGain;
         relationship.trust += trustGain;
 
-        // 消耗行动点
+        // 消耗行动点数
         this.gameState.actionPoints--;
+        console.log('消耗1点行动点，当前行动点数:', this.gameState.actionPoints);
 
         console.log('显示互动结果...');
         // 显示互动结果
         this.showInteractionResult(characterName, selectedScenario, affectionGain, trustGain);
 
+        // 更新游戏UI
+        this.updateGameUI();
+
         // 检查特殊事件
         this.checkSpecialEvents(characterName);
-        
-        // 检查行动点数是否用完
-        if (this.gameState.actionPoints <= 0) {
-            setTimeout(() => {
-                this.askForNextWeek();
-            }, 3000); // 3秒后询问是否进入下一周
-        }
         
         console.log('=== interactWithCharacter 结束 ===');
     }
@@ -1277,7 +1396,14 @@ class LoveDiaryGame {
     startNextWeek() {
         // 进入下一周，重置行动点数
         this.gameState.currentWeek++;
-        this.gameState.actionPoints = this.gameState.maxActionPoints;
+        
+        // 检查年级升级
+        this.updateGradeAndActionPoints();
+        
+        // 如果没有升级，正常恢复行动点数
+        if (this.gameState.actionPoints !== this.gameState.maxActionPoints) {
+            this.gameState.actionPoints = this.gameState.maxActionPoints;
+        }
         
         // 重置周统计
         this.gameState.weekStats = {
@@ -1358,9 +1484,9 @@ class LoveDiaryGame {
         const playerInfoEl = document.getElementById('player-info');
         
         if (currentWeekEl) currentWeekEl.textContent = `第${this.gameState.currentWeek}周`;
-        if (currentActionsEl) currentActionsEl.textContent = this.gameState.actionPoints;
+        if (currentActionsEl) currentActionsEl.textContent = `${this.gameState.actionPoints}/${this.gameState.maxActionPoints}`;
         if (playerInfoEl) playerInfoEl.textContent = 
-            `${this.gameState.player.name} (${this.gameState.player.major} | ${this.gameState.player.personality})`;
+            `${this.gameState.player.name} (${this.getGradeName()} | ${this.gameState.player.major} | ${this.gameState.player.personality})`;
         
         // 更新手机端UI
         const mobileWeekEl = document.getElementById('mobile-current-week');
