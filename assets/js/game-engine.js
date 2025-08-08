@@ -96,6 +96,97 @@ class LoveDiaryGame {
         }
     }
 
+    // 游戏内通知系统
+    showGameNotification(message, type = 'info', duration = 3000) {
+        const notification = document.createElement('div');
+        notification.className = 'game-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'error' ? 'linear-gradient(135deg, #f44336 0%, #d32f2f 100%)' : 
+                        type === 'success' ? 'linear-gradient(135deg, #4caf50 0%, #2e7d32 100%)' :
+                        type === 'warning' ? 'linear-gradient(135deg, #ff9800 0%, #f57c00 100%)' :
+                        'linear-gradient(135deg, #2196f3 0%, #1976d2 100%)'};
+            color: white;
+            padding: 15px 20px;
+            border-radius: 15px;
+            z-index: 3000;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+            animation: slideInRight 0.5s ease-out;
+            max-width: 300px;
+            word-wrap: break-word;
+            font-weight: 500;
+        `;
+        
+        // 添加图标
+        const icon = type === 'error' ? '❌' : 
+                    type === 'success' ? '✅' : 
+                    type === 'warning' ? '⚠️' : 'ℹ️';
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 18px; margin-right: 10px;">${icon}</span>
+                <span>${message}</span>
+            </div>
+        `;
+        
+        // 添加CSS动画
+        if (!document.querySelector('#notification-styles')) {
+            const style = document.createElement('style');
+            style.id = 'notification-styles';
+            style.textContent = `
+                @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes slideOutRight {
+                    from { transform: translateX(0); opacity: 1; }
+                    to { transform: translateX(100%); opacity: 0; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(notification);
+        
+        // 自动移除
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.style.animation = 'slideOutRight 0.5s ease-in';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.remove();
+                    }
+                }, 500);
+            }
+        }, duration);
+    }
+
+    // 游戏内确认对话框
+    showGameConfirm(message, onConfirm, onCancel = null) {
+        const modal = document.createElement('div');
+        modal.className = 'modal active';
+        modal.style.zIndex = '3500';
+        modal.innerHTML = `
+            <div class="modal-content" style="max-width: 400px; text-align: center;">
+                <h3 style="color: #ff6b9d; margin-bottom: 20px;">🤔 确认操作</h3>
+                <p style="line-height: 1.8; color: #555; margin-bottom: 25px; font-size: 16px;">${message}</p>
+                <div style="display: flex; gap: 15px; justify-content: center;">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove(); (${onCancel ? onCancel.toString() : 'function(){}'})()" 
+                            style="background: #f44336; color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 500;">
+                        取消
+                    </button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove(); (${onConfirm.toString()})()" 
+                            style="background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%); color: white; border: none; padding: 12px 25px; border-radius: 25px; cursor: pointer; font-weight: 500;">
+                        确认
+                    </button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+    }
+
     // 游戏流程控制
     startGame(playerData) {
         this.gameState.player = playerData;
@@ -106,7 +197,7 @@ class LoveDiaryGame {
 
     selectDay(day) {
         if (this.gameState.actionPoints <= 0) {
-            alert('本周行动点数已用完！');
+            this.showGameNotification('本周行动点数已用完！', 'warning');
             return;
         }
         
@@ -153,18 +244,26 @@ class LoveDiaryGame {
 
     interactWithCharacter(characterName) {
         if (this.gameState.actionPoints <= 0) {
-            alert('本周行动点数已用完！');
+            this.showGameNotification('本周行动点数已用完！', 'warning');
             return;
         }
 
         const relationship = this.gameState.characterRelationships[characterName];
         
-        // 随机事件或对话
-        const scenarios = gameData.scenarios.filter(s => s.character === characterName);
+        // 从所有场景类型中查找涉及该角色的场景
+        let allScenarios = [];
+        Object.values(gameData.scenarios).forEach(scenarioArray => {
+            if (Array.isArray(scenarioArray)) {
+                allScenarios = allScenarios.concat(scenarioArray);
+            }
+        });
+        
+        // 筛选出与当前角色相关的场景
+        const characterScenarios = allScenarios.filter(s => s.npc === characterName);
         let selectedScenario = null;
         
-        if (scenarios.length > 0) {
-            selectedScenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+        if (characterScenarios.length > 0) {
+            selectedScenario = characterScenarios[Math.floor(Math.random() * characterScenarios.length)];
         }
 
         // 增加关系值
@@ -200,8 +299,8 @@ class LoveDiaryGame {
                 
                 ${scenario ? `
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h4 style="color: #333; margin-bottom: 10px;">${scenario.title}</h4>
-                        <p style="line-height: 1.6; color: #555;">${scenario.description}</p>
+                        <h4 style="color: #333; margin-bottom: 10px;">${scenario.scene}</h4>
+                        <p style="line-height: 1.6; color: #555;">${scenario.dialogue}</p>
                     </div>
                 ` : `
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
@@ -606,7 +705,7 @@ class LoveDiaryGame {
             }, 2000);
             
         } catch (error) {
-            alert('保存失败：' + error.message);
+            this.showGameNotification('保存失败：' + error.message, 'error');
         }
     }
 
@@ -619,11 +718,11 @@ class LoveDiaryGame {
                 this.updateGameUI();
                 return true;
             } else {
-                alert('没有找到存档！');
+                this.showGameNotification('没有找到存档！', 'warning');
                 return false;
             }
         } catch (error) {
-            alert('加载失败：' + error.message);
+            this.showGameNotification('加载失败：' + error.message, 'error');
             return false;
         }
     }
@@ -681,12 +780,12 @@ function startGameFromCreation() {
     const personality = document.querySelector('input[name="personality"]:checked');
 
     if (!name) {
-        alert('请输入角色名字！');
+        game.showGameNotification('请输入角色名字！', 'warning');
         return;
     }
     
     if (!personality) {
-        alert('请选择性格！');
+        game.showGameNotification('请选择性格！', 'warning');
         return;
     }
 
@@ -712,12 +811,15 @@ function saveGame() {
 }
 
 function resetGameData() {
-    if (confirm('确定要重置所有游戏数据吗？此操作不可恢复！')) {
-        localStorage.removeItem('loveDiarySave');
-        game.resetGame();
-        alert('游戏数据已重置！');
-        game.closeModal('settings-modal');
-    }
+    game.showGameConfirm(
+        '确定要重置所有游戏数据吗？此操作不可恢复！',
+        function() {
+            localStorage.removeItem('loveDiarySave');
+            game.resetGame();
+            game.showGameNotification('游戏数据已重置！', 'success');
+            game.closeModal('settings-modal');
+        }
+    );
 }
 
 // 初始化游戏
