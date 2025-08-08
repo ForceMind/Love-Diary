@@ -15,7 +15,11 @@ class LoveDiaryGame {
                 顾言: 0,
                 林舟: 0,
                 宋之南: 0,
-                周奕辰: 0
+                周奕辰: 0,
+                江澈: 0,
+                苏云深: 0,
+                唐言: 0,
+                萧然: 0
             },
             weekActivities: {},
             currentDialogue: null,
@@ -191,7 +195,11 @@ class LoveDiaryGame {
             '顾言': 'guyan',
             '林舟': 'linzhou',
             '宋之南': 'songzhinan',
-            '周奕辰': 'zhouyichen'
+            '周奕辰': 'zhouyichen',
+            '江澈': 'jiangche',
+            '苏云深': 'suyunshen',
+            '唐言': 'tangyan',
+            '萧然': 'xiaoran'
         };
         return mapping[character] || character;
     }

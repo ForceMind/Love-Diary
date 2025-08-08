@@ -256,8 +256,8 @@ body {
 
 .affection-meters {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
 }
 
 .affection-item {
@@ -267,8 +267,9 @@ body {
 }
 
 .affection-item span:first-child {
-    min-width: 60px;
+    min-width: 50px;
     font-weight: 500;
+    font-size: 0.9rem;
 }
 
 .meter {
