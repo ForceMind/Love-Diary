@@ -229,24 +229,11 @@ class StoryManager {
     }
 
     /**
-     * 生成效果预览
+     * 生成效果预览（隐藏效果，不显示给玩家）
      */
     generateEffectPreview(effect) {
-        if (!effect || Object.keys(effect).length === 0) return '';
-        
-        const effectTexts = [];
-        Object.keys(effect).forEach(key => {
-            const value = effect[key];
-            if (value > 0) {
-                effectTexts.push(`<span style="color: #4caf50;">${key} +${value}</span>`);
-            } else if (value < 0) {
-                effectTexts.push(`<span style="color: #f44336;">${key} ${value}</span>`);
-            }
-        });
-        
-        if (effectTexts.length === 0) return '';
-        
-        return `<div style="font-size: 10px; margin-top: 4px; color: #888;">${effectTexts.join(' ')}</div>`;
+        // 不再显示效果预览，让玩家自己探索
+        return '';
     }
 
     /**
@@ -441,10 +428,20 @@ class StoryManager {
         if (!effects || Object.keys(effects).length === 0) return '';
         
         const effectTexts = [];
+        const effectNames = {
+            'affection': '好感度',
+            'trust': '信任度',
+            'impression': '印象分',
+            'intimacy': '亲密度',
+            'friendship': '友情',
+            'romantic': '恋情'
+        };
+        
         Object.keys(effects).forEach(key => {
             const value = effects[key];
             if (value !== 0) {
-                effectTexts.push(`${key}: ${value > 0 ? '+' : ''}${value}`);
+                const displayName = effectNames[key] || key;
+                effectTexts.push(`${displayName}: ${value > 0 ? '+' : ''}${value}`);
             }
         });
         
@@ -512,5 +509,298 @@ class StoryManager {
         return this.storyHistory.some(story => 
             story.characterName === characterName && story.storyType === storyType
         );
+    }
+
+    /**
+     * 检查是否可以解锁背景探索故事
+     */
+    canUnlockBackgroundStory(characterName, storyType) {
+        const relationship = this.gameLogic.gameState.characterRelationships[characterName];
+        const backgroundStory = GameData.backgroundStories[storyType];
+        
+        if (!relationship || !backgroundStory) return false;
+        
+        const condition = backgroundStory.unlockCondition;
+        return relationship.affection >= condition.affection && 
+               relationship.trust >= condition.trust;
+    }
+
+    /**
+     * 获取可用的背景探索故事
+     */
+    getAvailableBackgroundStories(characterName) {
+        const availableStories = [];
+        
+        Object.keys(GameData.backgroundStories).forEach(storyType => {
+            if (this.canUnlockBackgroundStory(characterName, storyType) && 
+                !this.hasStoryOccurred(characterName, storyType)) {
+                availableStories.push({
+                    type: storyType,
+                    name: GameData.backgroundStories[storyType].name,
+                    description: GameData.backgroundStories[storyType].description
+                });
+            }
+        });
+        
+        return availableStories;
+    }
+
+    /**
+     * 开始背景探索故事
+     */
+    startBackgroundStory(characterName, storyType) {
+        console.log(`开始背景探索故事: ${characterName} - ${storyType}`);
+        
+        this.currentStory = {
+            characterName,
+            activityId: 'background_exploration',
+            storyType,
+            round: 1,
+            choices: [],
+            effects: {}
+        };
+
+        this.showBackgroundStoryRound(1, storyType);
+    }
+
+    /**
+     * 显示背景探索故事轮次
+     */
+    showBackgroundStoryRound(round, storyType) {
+        const storyContent = this.generateBackgroundStoryContent(
+            this.currentStory.characterName, 
+            storyType, 
+            round
+        );
+
+        this.displayStoryModal(storyContent, round);
+    }
+
+    /**
+     * 生成背景探索故事内容
+     */
+    generateBackgroundStoryContent(characterName, storyType, round) {
+        const character = GameData.characters[characterName];
+        const playerName = this.gameLogic.gameState.player.name;
+        
+        switch (storyType) {
+            case 'dreams_exploration':
+                return this.generateDreamsStory(character, playerName, round);
+            case 'fears_understanding':
+                return this.generateFearsStory(character, playerName, round);
+            case 'secrets_discovery':
+                return this.generateSecretsStory(character, playerName, round);
+            case 'favorites_sharing':
+                return this.generateFavoritesStory(character, playerName, round);
+            case 'past_memories':
+                return this.generatePastMemoriesStory(character, playerName, round);
+            default:
+                return this.generateFallbackContent(characterName, 'background_exploration', storyType, round);
+        }
+    }
+
+    /**
+     * 生成梦想探索故事
+     */
+    generateDreamsStory(character, playerName, round) {
+        const dreams = character.dreams;
+        const randomDream = dreams[Math.floor(Math.random() * dreams.length)];
+        
+        if (round === 1) {
+            return {
+                description: `你和${character.name}坐在校园的长椅上，夕阳西下，这是一个适合谈心的时候。`,
+                dialogue: `${playerName}，你有什么梦想吗？我一直在想，人活着总要有些目标才有意思...`,
+                choices: [
+                    {
+                        text: "我想先听听你的梦想",
+                        effect: { affection: 2, trust: 3 },
+                        next: 2
+                    },
+                    {
+                        text: "我的梦想是...",
+                        effect: { affection: 1, trust: 2 },
+                        next: 3
+                    }
+                ]
+            };
+        } else if (round === 2) {
+            return {
+                description: `${character.name}的眼中闪烁着光芒，似乎很乐意分享内心的想法。`,
+                dialogue: `我一直梦想着${randomDream}。虽然现在看起来还很遥远，但我相信只要努力就一定能实现。`,
+                choices: [
+                    {
+                        text: "这个梦想真的很棒！",
+                        effect: { affection: 3, trust: 2, impression: 2 },
+                        next: "end"
+                    },
+                    {
+                        text: "为什么会有这样的梦想？",
+                        effect: { affection: 2, trust: 3, impression: 1 },
+                        next: "end"
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * 生成恐惧理解故事
+     */
+    generateFearsStory(character, playerName, round) {
+        const fears = character.fears;
+        const randomFear = fears[Math.floor(Math.random() * fears.length)];
+        
+        if (round === 1) {
+            return {
+                description: `今天${character.name}看起来有些心事重重，你关切地询问。`,
+                dialogue: `${playerName}，你有什么特别害怕的事情吗？我最近总是会想到一些让我不安的事...`,
+                choices: [
+                    {
+                        text: "是什么让你不安？可以和我说说",
+                        effect: { affection: 2, trust: 4 },
+                        next: 2
+                    },
+                    {
+                        text: "每个人都有害怕的事，这很正常",
+                        effect: { affection: 1, trust: 2 },
+                        next: 2
+                    }
+                ]
+            };
+        } else if (round === 2) {
+            return {
+                description: `${character.name}犹豫了一下，最终决定向你敞开心扉。`,
+                dialogue: `其实我最害怕的是${randomFear}...这听起来可能很奇怪，但这确实让我很困扰。`,
+                choices: [
+                    {
+                        text: "谢谢你愿意告诉我，我会陪伴你的",
+                        effect: { affection: 4, trust: 4, impression: 2 },
+                        next: "end"
+                    },
+                    {
+                        text: "我理解这种感觉，我们一起面对",
+                        effect: { affection: 3, trust: 3, impression: 3 },
+                        next: "end"
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * 生成秘密发现故事
+     */
+    generateSecretsStory(character, playerName, round) {
+        const secrets = character.secrets;
+        const randomSecret = secrets[Math.floor(Math.random() * secrets.length)];
+        
+        if (round === 1) {
+            return {
+                description: `你和${character.name}在一个安静的角落聊天，氛围变得亲密起来。`,
+                dialogue: `${playerName}，我有个秘密一直没有告诉过任何人...你愿意听吗？`,
+                choices: [
+                    {
+                        text: "当然，我会保守秘密的",
+                        effect: { affection: 3, trust: 5 },
+                        next: 2
+                    },
+                    {
+                        text: "如果你觉得合适的话",
+                        effect: { affection: 2, trust: 3 },
+                        next: 2
+                    }
+                ]
+            };
+        } else if (round === 2) {
+            return {
+                description: `${character.name}深深地看着你，眼中有着信任和期待。`,
+                dialogue: `实际上，${randomSecret}...我从来没有对别人说过这些。`,
+                choices: [
+                    {
+                        text: "感谢你信任我，这让我们更亲近了",
+                        effect: { affection: 5, trust: 4, impression: 3 },
+                        next: "end"
+                    },
+                    {
+                        text: "每个人都有自己的秘密，我理解",
+                        effect: { affection: 3, trust: 4, impression: 2 },
+                        next: "end"
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * 生成喜好分享故事
+     */
+    generateFavoritesStory(character, playerName, round) {
+        const favorites = character.favoriteThings;
+        const randomFavorite = favorites[Math.floor(Math.random() * favorites.length)];
+        
+        if (round === 1) {
+            return {
+                description: `你们在聊天中谈到了各自的喜好。`,
+                dialogue: `${playerName}，你平时喜欢什么呢？我特别喜欢${randomFavorite}，总是让我感到愉悦。`,
+                choices: [
+                    {
+                        text: "我也很喜欢这个！",
+                        effect: { affection: 3, trust: 2, impression: 3 },
+                        next: "end"
+                    },
+                    {
+                        text: "为什么特别喜欢这个？",
+                        effect: { affection: 2, trust: 2, impression: 2 },
+                        next: "end"
+                    },
+                    {
+                        text: "我喜欢的可能有点不同...",
+                        effect: { affection: 1, trust: 1, impression: 1 },
+                        next: "end"
+                    }
+                ]
+            };
+        }
+    }
+
+    /**
+     * 生成过去回忆故事
+     */
+    generatePastMemoriesStory(character, playerName, round) {
+        if (round === 1) {
+            return {
+                description: `一个宁静的午后，你和${character.name}聊起了过去的事情。`,
+                dialogue: `${playerName}，${character.background}你想了解我的过去吗？`,
+                choices: [
+                    {
+                        text: "我很想了解你",
+                        effect: { affection: 3, trust: 4 },
+                        next: 2
+                    },
+                    {
+                        text: "如果你愿意分享的话",
+                        effect: { affection: 2, trust: 2 },
+                        next: 2
+                    }
+                ]
+            };
+        } else if (round === 2) {
+            return {
+                description: `${character.name}陷入了回忆中，眼神变得深远。`,
+                dialogue: `那时候的我还很年轻，有很多不成熟的想法。但正是那些经历塑造了现在的我...`,
+                choices: [
+                    {
+                        text: "谢谢你愿意和我分享这些",
+                        effect: { affection: 4, trust: 3, impression: 2 },
+                        next: "end"
+                    },
+                    {
+                        text: "过去的经历让你变得更加特别",
+                        effect: { affection: 3, trust: 2, impression: 3 },
+                        next: "end"
+                    }
+                ]
+            };
+        }
     }
 }

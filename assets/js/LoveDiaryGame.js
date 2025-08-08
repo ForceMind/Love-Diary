@@ -9,6 +9,9 @@ class LoveDiaryGame {
         this.logic = new GameLogic(this.engine);
         this.storyManager = new StoryManager(this.logic);
         
+        // 设置相互引用
+        this.logic.setStoryManager(this.storyManager);
+        
         // 绑定全局引用（保持兼容性）
         window.game = this;
         
@@ -49,6 +52,12 @@ class LoveDiaryGame {
         
         // 角色创建事件
         this.setupCharacterCreationEvents();
+        
+        // 模态框关闭事件
+        this.setupModalCloseEvents();
+        
+        // 移动端事件
+        this.setupMobileEvents();
     }
 
     /**
@@ -116,6 +125,14 @@ class LoveDiaryGame {
             });
         }
 
+        // 下一周按钮
+        const nextWeekBtn = document.querySelector('#next-week-btn');
+        if (nextWeekBtn) {
+            nextWeekBtn.addEventListener('click', () => {
+                this.logic.nextWeek();
+            });
+        }
+
         // 日历日期点击事件
         this.setupCalendarEvents();
     }
@@ -143,6 +160,123 @@ class LoveDiaryGame {
             createBtn.addEventListener('click', () => {
                 this.createCharacter();
             });
+        }
+
+        // 角色创建弹窗关闭按钮
+        const closeBtn = document.querySelector('#character-creation-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.engine.closeModal('character-creation-modal');
+            });
+        }
+    }
+
+    /**
+     * 设置所有模态框关闭事件
+     */
+    setupModalCloseEvents() {
+        const modalCloseButtons = [
+            { id: 'load-game-modal-close', modal: 'load-game-modal' },
+            { id: 'achievements-modal-close', modal: 'achievements-modal' },
+            { id: 'scenario-modal-close', modal: 'scenario-modal' },
+            { id: 'gallery-modal-close', modal: 'gallery-modal' },
+            { id: 'settings-modal-close', modal: 'settings-modal' },
+            { id: 'ending-modal-close', modal: 'ending-modal' },
+            { id: 'character-selection-modal-close', modal: 'character-selection-modal' }
+        ];
+
+        modalCloseButtons.forEach(button => {
+            const closeBtn = document.querySelector(`#${button.id}`);
+            if (closeBtn) {
+                closeBtn.addEventListener('click', () => {
+                    this.engine.closeModal(button.modal);
+                });
+            }
+        });
+
+        // 重置游戏按钮
+        const resetGameBtn = document.querySelector('#reset-game-btn');
+        if (resetGameBtn) {
+            resetGameBtn.addEventListener('click', () => {
+                this.resetGameData();
+            });
+        }
+    }
+
+    /**
+     * 设置移动端事件
+     */
+    setupMobileEvents() {
+        // 移动设置按钮
+        const mobileSettingsBtn = document.querySelector('#mobile-settings-btn');
+        if (mobileSettingsBtn) {
+            mobileSettingsBtn.addEventListener('click', () => {
+                this.toggleMobileSettings();
+            });
+        }
+
+        // 移动端保存按钮
+        const mobileSaveBtn = document.querySelector('#mobile-save-btn');
+        if (mobileSaveBtn) {
+            mobileSaveBtn.addEventListener('click', () => {
+                this.saveGame();
+                this.closeMobileSettings();
+            });
+        }
+
+        // 移动端设置模态框按钮
+        const mobileSettingsModalBtn = document.querySelector('#mobile-settings-modal-btn');
+        if (mobileSettingsModalBtn) {
+            mobileSettingsModalBtn.addEventListener('click', () => {
+                this.engine.showModal('settings-modal');
+                this.closeMobileSettings();
+            });
+        }
+
+        // 移动端下一周按钮
+        const mobileNextWeekBtn = document.querySelector('#mobile-next-week-btn');
+        if (mobileNextWeekBtn) {
+            mobileNextWeekBtn.addEventListener('click', () => {
+                this.logic.nextWeek();
+                this.closeMobileSettings();
+            });
+        }
+
+        // 移动端返回菜单按钮
+        const mobileMenuBtn = document.querySelector('#mobile-menu-btn');
+        if (mobileMenuBtn) {
+            mobileMenuBtn.addEventListener('click', () => {
+                this.confirmReturnToMenu();
+                this.closeMobileSettings();
+            });
+        }
+
+        // 移动端关闭按钮
+        const mobileCloseBtn = document.querySelector('#mobile-close-btn');
+        if (mobileCloseBtn) {
+            mobileCloseBtn.addEventListener('click', () => {
+                this.closeMobileSettings();
+            });
+        }
+    }
+
+    /**
+     * 切换移动端设置面板
+     */
+    toggleMobileSettings() {
+        const mobileSettings = document.querySelector('.mobile-settings-panel');
+        if (mobileSettings) {
+            mobileSettings.classList.toggle('active');
+        }
+    }
+
+    /**
+     * 关闭移动端设置面板
+     */
+    closeMobileSettings() {
+        const mobileSettings = document.querySelector('.mobile-settings-panel');
+        if (mobileSettings) {
+            mobileSettings.classList.remove('active');
         }
     }
 
@@ -277,17 +411,25 @@ class LoveDiaryGame {
     createCharacter() {
         const nameInput = document.querySelector('#player-name');
         const majorSelect = document.querySelector('#player-major');
-        const personalitySelect = document.querySelector('#player-personality');
+        const personalityRadios = document.querySelectorAll('input[name="personality"]');
 
-        if (!nameInput || !majorSelect || !personalitySelect) {
+        if (!nameInput || !majorSelect) {
             this.engine.showNotification('请确保所有输入框都存在', 'error');
             return;
         }
 
+        // 获取选中的性格
+        let selectedPersonality = '';
+        personalityRadios.forEach(radio => {
+            if (radio.checked) {
+                selectedPersonality = radio.value;
+            }
+        });
+
         const playerData = {
             name: nameInput.value.trim(),
             major: majorSelect.value,
-            personality: personalitySelect.value
+            personality: selectedPersonality
         };
 
         // 验证输入
@@ -331,6 +473,20 @@ class LoveDiaryGame {
     saveGame() {
         if (this.engine.saveGame(this.logic.gameState)) {
             this.engine.showNotification('游戏已保存', 'success');
+        }
+    }
+
+    /**
+     * 重置游戏数据
+     */
+    resetGameData() {
+        const confirmed = confirm('确定要重置所有游戏数据吗？此操作不可撤销！');
+        if (confirmed) {
+            localStorage.clear();
+            this.engine.showNotification('游戏数据已重置', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         }
     }
 

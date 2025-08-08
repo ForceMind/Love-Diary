@@ -1041,7 +1041,9 @@ const GameData = {
                 affection: 80,
                 trust: 70,
                 playerStats: { 学习: 60, 理性: 50 },
-                specialEvents: ["programming_together", "late_night_coding"]
+                specialEvents: ["programming_together", "late_night_coding"],
+                requiredBackgroundStories: ["dreams_exploration", "fears_understanding", "secrets_discovery"],
+                requiredPersonalityMatch: ["内向", "理性"]
             }
         },
         林舟_True_End: {
@@ -1052,9 +1054,185 @@ const GameData = {
                 affection: 80,
                 trust: 70,
                 playerStats: { 运动: 60, 活力: 50 },
-                specialEvents: ["basketball_game", "morning_run"]
+                specialEvents: ["basketball_game", "morning_run"],
+                requiredBackgroundStories: ["dreams_exploration", "favorites_sharing", "past_memories"],
+                requiredPersonalityMatch: ["开朗", "运动"]
+            }
+        },
+        周奕辰_True_End: {
+            name: "音乐之约",
+            description: "与周奕辰的真爱结局",
+            character: "周奕辰",
+            conditions: {
+                affection: 80,
+                trust: 70,
+                playerStats: { 艺术: 60, 感性: 50 },
+                specialEvents: ["piano_duet", "music_competition"],
+                requiredBackgroundStories: ["dreams_exploration", "fears_understanding", "favorites_sharing"],
+                requiredPersonalityMatch: ["温柔", "艺术"]
+            }
+        },
+        宋之南_True_End: {
+            name: "文学之恋",
+            description: "与宋之南的真爱结局",
+            character: "宋之南",
+            conditions: {
+                affection: 80,
+                trust: 70,
+                playerStats: { 文学: 60, 感性: 50 },
+                specialEvents: ["poetry_reading", "writing_together"],
+                requiredBackgroundStories: ["dreams_exploration", "fears_understanding", "secrets_discovery"],
+                requiredPersonalityMatch: ["安静", "文艺"]
+            }
+        },
+        江澈_True_End: {
+            name: "治愈之恋",
+            description: "与江澈的真爱结局",
+            character: "江澈",
+            conditions: {
+                affection: 80,
+                trust: 70,
+                playerStats: { 理性: 60, 责任感: 50 },
+                specialEvents: ["volunteer_work", "medical_study"],
+                requiredBackgroundStories: ["dreams_exploration", "past_memories", "favorites_sharing"],
+                requiredPersonalityMatch: ["温柔", "理性"]
+            }
+        },
+        唐言_True_End: {
+            name: "霸总之恋",
+            description: "与唐言的真爱结局",
+            character: "唐言",
+            conditions: {
+                affection: 80,
+                trust: 70,
+                playerStats: { 社交: 60, 自信: 50 },
+                specialEvents: ["business_project", "luxury_date"],
+                requiredBackgroundStories: ["secrets_discovery", "fears_understanding", "past_memories"],
+                requiredPersonalityMatch: ["自信", "社交"]
+            }
+        },
+        萧然_True_End: {
+            name: "艺术之恋",
+            description: "与萧然的真爱结局",
+            character: "萧然",
+            conditions: {
+                affection: 80,
+                trust: 70,
+                playerStats: { 艺术: 60, 观察力: 50 },
+                specialEvents: ["art_exhibition", "painting_together"],
+                requiredBackgroundStories: ["dreams_exploration", "fears_understanding", "favorites_sharing"],
+                requiredPersonalityMatch: ["安静", "艺术"]
             }
         }
         // 继续其他角色的结局...
+    },
+
+    // 背景探索故事类型
+    backgroundStories: {
+        dreams_exploration: {
+            name: "梦想探索",
+            description: "深入了解角色的梦想和抱负",
+            unlockCondition: { affection: 30, trust: 25 }
+        },
+        fears_understanding: {
+            name: "恐惧理解", 
+            description: "了解角色内心的恐惧和脆弱",
+            unlockCondition: { affection: 40, trust: 35 }
+        },
+        secrets_discovery: {
+            name: "秘密发现",
+            description: "发现角色深藏的秘密",
+            unlockCondition: { affection: 50, trust: 45 }
+        },
+        favorites_sharing: {
+            name: "喜好分享",
+            description: "分享彼此喜欢的事物",
+            unlockCondition: { affection: 20, trust: 15 }
+        },
+        past_memories: {
+            name: "往昔回忆",
+            description: "了解角色的过去经历",
+            unlockCondition: { affection: 35, trust: 40 }
+        }
+    },
+
+    // 学业系统
+    academicSystem: {
+        grades: {
+            1: { name: "大一", requiredKnowledge: 0, examDifficulty: 20 },
+            2: { name: "大二", requiredKnowledge: 100, examDifficulty: 40 },
+            3: { name: "大三", requiredKnowledge: 250, examDifficulty: 60 },
+            4: { name: "大四", requiredKnowledge: 450, examDifficulty: 80 }
+        },
+        subjects: {
+            "基础课程": {
+                description: "大学基础必修课程",
+                knowledgeGain: 15,
+                difficulty: 20,
+                timeRequired: 1
+            },
+            "专业课程": {
+                description: "专业相关核心课程",
+                knowledgeGain: 25,
+                difficulty: 40,
+                timeRequired: 1
+            },
+            "高级课程": {
+                description: "高难度进阶课程",
+                knowledgeGain: 40,
+                difficulty: 60,
+                timeRequired: 2
+            },
+            "研究项目": {
+                description: "独立研究项目",
+                knowledgeGain: 60,
+                difficulty: 80,
+                timeRequired: 3
+            }
+        },
+        examQuestions: {
+            "基础课程": [
+                {
+                    question: "在程序设计中，变量的作用域是指什么？",
+                    options: ["变量的数据类型", "变量可以被访问的代码范围", "变量的内存大小", "变量的运算速度"],
+                    correct: 1,
+                    difficulty: 20
+                },
+                {
+                    question: "数据库中的主键有什么特点？",
+                    options: ["可以重复", "可以为空", "唯一且不为空", "只能是数字"],
+                    correct: 2,
+                    difficulty: 25
+                }
+            ],
+            "专业课程": [
+                {
+                    question: "在面向对象编程中，封装的主要目的是什么？",
+                    options: ["提高运行速度", "隐藏实现细节和保护数据", "减少代码量", "简化语法"],
+                    correct: 1,
+                    difficulty: 40
+                },
+                {
+                    question: "什么是算法的时间复杂度？",
+                    options: ["算法运行的实际时间", "算法代码的行数", "算法执行时间与输入规模的关系", "算法占用的内存大小"],
+                    correct: 2,
+                    difficulty: 45
+                }
+            ],
+            "高级课程": [
+                {
+                    question: "在分布式系统中，CAP定理指的是什么？",
+                    options: ["一致性、可用性、分区容错性", "并发性、原子性、持久性", "缓存、API、协议", "计算、存储、网络"],
+                    correct: 0,
+                    difficulty: 60
+                },
+                {
+                    question: "机器学习中的过拟合现象是指什么？",
+                    options: ["模型太简单", "数据太少", "模型在训练集上表现好但泛化能力差", "算法运行太慢"],
+                    correct: 2,
+                    difficulty: 65
+                }
+            ]
+        }
     }
 };

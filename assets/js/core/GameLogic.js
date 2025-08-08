@@ -8,6 +8,14 @@ class GameLogic {
         this.gameState = this.initializeGameState();
         this.selectedDay = null;
         this.currentStory = null;
+        this.storyManager = null; // 稍后设置
+    }
+
+    /**
+     * 设置故事管理器
+     */
+    setStoryManager(storyManager) {
+        this.storyManager = storyManager;
     }
 
     /**
@@ -19,7 +27,12 @@ class GameLogic {
                 name: '',
                 major: '',
                 personality: '',
-                grade: 1  // 年级：1=大一, 2=大二, 3=大三, 4=大四
+                grade: 1,
+            knowledge: 0,
+            studyProgress: 0,
+            examsPassed: [],
+            currentSemester: 1,
+            isExamTime: false  // 年级：1=大一, 2=大二, 3=大三, 4=大四
             },
             currentWeek: 1,
             currentDay: 1,
@@ -177,6 +190,7 @@ class GameLogic {
      */
     showActivityMenu(day) {
         const activities = this.getAvailableActivities(day);
+        const backgroundStories = this.getAvailableBackgroundExplorations();
         const dayNames = { 1: '星期一', 2: '星期二', 3: '星期三', 4: '星期四', 5: '星期五', 6: '星期六', 7: '星期日' };
         
         this.engine.showModal('scenario-modal', {
@@ -208,6 +222,7 @@ class GameLogic {
                 if (choicesElement) {
                     choicesElement.innerHTML = '';
                     
+                    // 添加常规活动
                     activities.forEach(activity => {
                         const button = document.createElement('button');
                         button.className = 'choice-btn';
@@ -223,6 +238,68 @@ class GameLogic {
                         });
                         choicesElement.appendChild(button);
                     });
+                    
+                    // 添加学习课程分隔线
+                    const studySeparator = document.createElement('div');
+                    studySeparator.style.cssText = 'border-top: 1px solid #ddd; margin: 15px 0; text-align: center; color: #888; font-size: 12px;';
+                    studySeparator.innerHTML = '<span style="background: white; padding: 0 10px;">— 学习课程 —</span>';
+                    choicesElement.appendChild(studySeparator);
+                    
+                    // 添加学习课程选项
+                    Object.entries(GameData.academicSystem.subjects).forEach(([courseType, course]) => {
+                        // 根据年级限制课程
+                        const currentGrade = this.gameState.player.grade;
+                        let canTake = true;
+                        
+                        if (courseType === "高级课程" && currentGrade < 3) canTake = false;
+                        if (courseType === "研究项目" && currentGrade < 4) canTake = false;
+                        
+                        if (canTake) {
+                            const button = document.createElement('button');
+                            button.className = 'choice-btn';
+                            button.style.cssText = 'background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border: 1px solid #64b5f6;';
+                            button.innerHTML = `
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">📖 ${courseType}</div>
+                                    <div style="font-size: 12px; color: #666; line-height: 1.4;">${course.description}</div>
+                                    <div style="font-size: 11px; color: #888; margin-top: 4px;">
+                                        知识值 +${course.knowledgeGain} | 行动点 -${course.timeRequired} | 难度 ${course.difficulty}/100
+                                    </div>
+                                </div>
+                            `;
+                            button.addEventListener('click', () => {
+                                this.engine.closeModal('scenario-modal');
+                                this.studyCourse(courseType);
+                            });
+                            choicesElement.appendChild(button);
+                        }
+                    });
+                    
+                    // 添加背景探索分隔线
+                    if (backgroundStories.length > 0) {
+                        const separator = document.createElement('div');
+                        separator.style.cssText = 'border-top: 1px solid #ddd; margin: 15px 0; text-align: center; color: #888; font-size: 12px;';
+                        separator.innerHTML = '<span style="background: white; padding: 0 10px;">— 深入了解 —</span>';
+                        choicesElement.appendChild(separator);
+                        
+                        // 添加背景探索选项
+                        backgroundStories.forEach(story => {
+                            const button = document.createElement('button');
+                            button.className = 'choice-btn';
+                            button.style.cssText = 'background: linear-gradient(135deg, #fff3e0 0%, #fce4ec 100%); border: 1px solid #ffab91;';
+                            button.innerHTML = `
+                                <div style="text-align: left;">
+                                    <div style="font-weight: bold; margin-bottom: 5px;">💝 ${story.name} - ${story.characterName}</div>
+                                    <div style="font-size: 12px; color: #666; line-height: 1.4;">${story.description}</div>
+                                </div>
+                            `;
+                            button.addEventListener('click', () => {
+                                this.engine.closeModal('scenario-modal');
+                                this.startBackgroundExploration(story.characterName, story.type);
+                            });
+                            choicesElement.appendChild(button);
+                        });
+                    }
                 }
             }
         });
@@ -646,6 +723,787 @@ class GameLogic {
                         this.engine.closeModal('scenario-modal');
                     });
                     
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 获取可用的背景探索故事
+     */
+    getAvailableBackgroundExplorations() {
+        const availableStories = [];
+        
+        // 安全检查
+        if (!this.storyManager) {
+            console.warn('StoryManager 未初始化');
+            return availableStories;
+        }
+        
+        Object.keys(this.gameState.characterRelationships).forEach(characterName => {
+            const stories = this.storyManager.getAvailableBackgroundStories(characterName);
+            stories.forEach(story => {
+                availableStories.push({
+                    characterName,
+                    type: story.type,
+                    name: story.name,
+                    description: story.description
+                });
+            });
+        });
+        
+        return availableStories;
+    }
+
+    /**
+     * 开始背景探索
+     */
+    startBackgroundExploration(characterName, storyType) {
+        console.log(`开始背景探索: ${characterName} - ${storyType}`);
+        
+        // 安全检查
+        if (!this.storyManager) {
+            console.error('StoryManager 未初始化');
+            return;
+        }
+        
+        // 消耗行动点
+        this.gameState.actionPoints--;
+        this.updateUI();
+        
+        // 开始背景探索故事
+        this.storyManager.startBackgroundStory(characterName, storyType);
+    }
+
+    /**
+     * 检查是否满足结局条件
+     */
+    checkEndingConditions(characterName) {
+        const character = GameData.characters[characterName];
+        if (!character) return false;
+
+        const endingKey = `${characterName}_True_End`;
+        const ending = GameData.endings[endingKey];
+        if (!ending) return false;
+
+        const relationship = this.gameState.characterRelationships[characterName];
+        const conditions = ending.conditions;
+
+        // 检查关系值条件
+        if (relationship.affection < conditions.affection || 
+            relationship.trust < conditions.trust) {
+            return false;
+        }
+
+        // 检查玩家属性条件
+        if (conditions.playerStats) {
+            for (const [stat, required] of Object.entries(conditions.playerStats)) {
+                if ((this.gameState.playerStats[stat] || 0) < required) {
+                    return false;
+                }
+            }
+        }
+
+        // 检查背景故事完成情况
+        if (conditions.requiredBackgroundStories && this.storyManager) {
+            for (const storyType of conditions.requiredBackgroundStories) {
+                if (!this.storyManager.hasStoryOccurred(characterName, storyType)) {
+                    return false;
+                }
+            }
+        }
+
+        // 检查性格匹配
+        if (conditions.requiredPersonalityMatch) {
+            const playerPersonality = this.gameState.player.personality;
+            const characterPersonality = character.personality;
+            
+            const hasMatchingTrait = conditions.requiredPersonalityMatch.some(trait => 
+                playerPersonality.includes(trait) || characterPersonality.includes(trait)
+            );
+            
+            if (!hasMatchingTrait) {
+                return false;
+            }
+        }
+
+        // 检查特殊事件（如果有）
+        if (conditions.specialEvents) {
+            for (const event of conditions.specialEvents) {
+                if (!this.gameState.specialEvents.includes(event)) {
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * 获取角色结局要求说明
+     */
+    getEndingRequirements(characterName) {
+        const endingKey = `${characterName}_True_End`;
+        const ending = GameData.endings[endingKey];
+        if (!ending) return null;
+
+        const relationship = this.gameState.characterRelationships[characterName];
+        const conditions = ending.conditions;
+        const requirements = [];
+
+        // 关系值要求
+        requirements.push({
+            type: '关系发展',
+            items: [
+                `好感度: ${relationship.affection}/${conditions.affection}`,
+                `信任度: ${relationship.trust}/${conditions.trust}`
+            ],
+            completed: relationship.affection >= conditions.affection && 
+                      relationship.trust >= conditions.trust
+        });
+
+        // 背景故事要求
+        if (conditions.requiredBackgroundStories && this.storyManager) {
+            const storyItems = conditions.requiredBackgroundStories.map(storyType => {
+                const storyInfo = GameData.backgroundStories[storyType];
+                const completed = this.storyManager.hasStoryOccurred(characterName, storyType);
+                return {
+                    name: storyInfo ? storyInfo.name : storyType,
+                    completed
+                };
+            });
+            
+            requirements.push({
+                type: '背景了解',
+                items: storyItems.map(item => `${item.name} ${item.completed ? '✅' : '❌'}`),
+                completed: storyItems.every(item => item.completed)
+            });
+        }
+
+        // 性格匹配要求
+        if (conditions.requiredPersonalityMatch) {
+            const playerPersonality = this.gameState.player.personality;
+            const hasMatch = conditions.requiredPersonalityMatch.some(trait => 
+                playerPersonality.includes(trait)
+            );
+            
+            requirements.push({
+                type: '性格匹配',
+                items: [`需要具备: ${conditions.requiredPersonalityMatch.join('、')} 中的任一特质`],
+                completed: hasMatch
+            });
+        }
+
+        return {
+            endingName: ending.name,
+            requirements,
+            canComplete: this.checkEndingConditions(characterName)
+        };
+    }
+
+    /**
+     * 显示结局要求
+     */
+    showEndingRequirements(characterName) {
+        const requirements = this.getEndingRequirements(characterName);
+        if (!requirements) return;
+
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = `${characterName} - 结局条件`;
+                }
+                
+                if (descElement) {
+                    let html = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">💕</div>
+                            <h3 style="color: #ff6b9d; margin-bottom: 15px;">${requirements.endingName}</h3>
+                            <div style="text-align: left; background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                    `;
+                    
+                    requirements.requirements.forEach(req => {
+                        const statusIcon = req.completed ? '✅' : '⏳';
+                        html += `
+                            <div style="margin-bottom: 15px;">
+                                <h4 style="color: #333; margin-bottom: 8px;">${statusIcon} ${req.type}</h4>
+                                <ul style="margin-left: 20px; color: #666;">
+                        `;
+                        req.items.forEach(item => {
+                            html += `<li style="margin-bottom: 4px;">${item}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    });
+                    
+                    if (requirements.canComplete) {
+                        html += `
+                            <div style="text-align: center; margin-top: 20px; padding: 15px; background: #e8f5e8; border-radius: 8px;">
+                                <p style="color: #2e7d32; margin: 0; font-weight: bold;">🎉 恭喜！你已经满足所有条件，可以达成真爱结局！</p>
+                            </div>
+                        `;
+                    } else {
+                        html += `
+                            <div style="text-align: center; margin-top: 20px; padding: 15px; background: #fff3e0; border-radius: 8px;">
+                                <p style="color: #f57c00; margin: 0;">继续努力，完成所有要求就能达成真爱结局！</p>
+                            </div>
+                        `;
+                    }
+                    
+                    html += `</div></div>`;
+                    descElement.innerHTML = html;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const closeBtn = document.createElement('button');
+                    closeBtn.className = 'choice-btn';
+                    closeBtn.textContent = '知道了';
+                    closeBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
+                    choicesElement.appendChild(closeBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 学习课程
+     */
+    studyCourse(courseType) {
+        const course = GameData.academicSystem.subjects[courseType];
+        if (!course) return;
+
+        // 检查是否有足够的行动点
+        if (this.gameState.actionPoints < course.timeRequired) {
+            alert('行动点不足！');
+            return;
+        }
+
+        // 消耗行动点
+        this.gameState.actionPoints -= course.timeRequired;
+        
+        // 增加知识值
+        this.gameState.player.knowledge += course.knowledgeGain;
+        this.gameState.player.studyProgress += course.knowledgeGain;
+        
+        // 增加学习相关属性
+        this.updatePlayerStats({ 学习: 5, 专注: 3, 知识: course.knowledgeGain / 10 });
+        
+        this.updateUI();
+        this.showStudyResult(courseType, course);
+    }
+
+    /**
+     * 显示学习结果
+     */
+    showStudyResult(courseType, course) {
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = '学习完成';
+                }
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📚</div>
+                            <h3 style="color: #ff6b9d; margin-bottom: 15px;">完成了${courseType}！</h3>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                                <p style="color: #666; margin-bottom: 15px;">${course.description}</p>
+                                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px;">
+                                    <h4 style="color: #2e7d32; margin-bottom: 10px;">📈 学习收获</h4>
+                                    <p style="color: #4caf50; margin: 5px 0;">知识值 +${course.knowledgeGain}</p>
+                                    <p style="color: #4caf50; margin: 5px 0;">学习能力 +5</p>
+                                    <p style="color: #4caf50; margin: 5px 0;">专注力 +3</p>
+                                    <div style="margin-top: 10px; color: #666;">
+                                        <small>当前知识值: ${this.gameState.player.knowledge}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '继续';
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                        this.checkExamRequirement();
+                    });
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 检查是否需要参加期末考试
+     */
+    checkExamRequirement() {
+        const currentGrade = this.gameState.player.grade;
+        const gradeInfo = GameData.academicSystem.grades[currentGrade];
+        const nextGradeInfo = GameData.academicSystem.grades[currentGrade + 1];
+        
+        // 检查是否到了学期末
+        if (this.gameState.week % 8 === 0 && !this.gameState.player.isExamTime) {
+            if (nextGradeInfo && this.gameState.player.knowledge >= nextGradeInfo.requiredKnowledge) {
+                this.gameState.player.isExamTime = true;
+                this.showExamNotice();
+            } else if (nextGradeInfo) {
+                this.showInsufficientKnowledge(nextGradeInfo.requiredKnowledge);
+            }
+        }
+    }
+
+    /**
+     * 显示考试通知
+     */
+    showExamNotice() {
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = '期末考试通知';
+                }
+                
+                if (descElement) {
+                    const currentGrade = this.gameState.player.grade;
+                    const gradeInfo = GameData.academicSystem.grades[currentGrade];
+                    
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📝</div>
+                            <h3 style="color: #ff6b9d; margin-bottom: 15px;">期末考试来了！</h3>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
+                                <p style="color: #666; margin-bottom: 15px;">
+                                    ${gradeInfo.name}的期末考试即将开始。你必须通过考试才能升入下一年级，
+                                    否则将会留级，这可能会影响你与目标角色的关系发展。
+                                </p>
+                                <div style="background: #fff3e0; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                    <p style="color: #f57c00; margin: 0;">
+                                        <strong>考试难度:</strong> ${gradeInfo.examDifficulty}/100<br>
+                                        <strong>你的知识水平:</strong> ${this.gameState.player.knowledge}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    
+                    const examBtn = document.createElement('button');
+                    examBtn.className = 'choice-btn';
+                    examBtn.textContent = '参加考试';
+                    examBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                        this.startExam();
+                    });
+                    choicesElement.appendChild(examBtn);
+                    
+                    const prepareBtn = document.createElement('button');
+                    prepareBtn.className = 'choice-btn';
+                    prepareBtn.style.background = '#ddd';
+                    prepareBtn.textContent = '再准备一下';
+                    prepareBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
+                    choicesElement.appendChild(prepareBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 开始期末考试
+     */
+    startExam() {
+        const currentGrade = this.gameState.player.grade;
+        const gradeInfo = GameData.academicSystem.grades[currentGrade];
+        
+        // 根据当前年级选择考试题目类型
+        let questionType = "基础课程";
+        if (currentGrade >= 3) questionType = "高级课程";
+        else if (currentGrade >= 2) questionType = "专业课程";
+        
+        const questions = GameData.academicSystem.examQuestions[questionType];
+        const selectedQuestions = this.getRandomQuestions(questions, 3);
+        
+        this.currentExam = {
+            questions: selectedQuestions,
+            currentQuestion: 0,
+            correctAnswers: 0,
+            totalQuestions: selectedQuestions.length
+        };
+        
+        this.showExamQuestion();
+    }
+
+    /**
+     * 随机选择考试题目
+     */
+    getRandomQuestions(questions, count) {
+        const shuffled = [...questions].sort(() => 0.5 - Math.random());
+        return shuffled.slice(0, count);
+    }
+
+    /**
+     * 显示考试题目
+     */
+    showExamQuestion() {
+        const exam = this.currentExam;
+        const question = exam.questions[exam.currentQuestion];
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = `期末考试 (${exam.currentQuestion + 1}/${exam.totalQuestions})`;
+                }
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="padding: 20px;">
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                                <h4 style="color: #333; margin-bottom: 15px;">题目:</h4>
+                                <p style="font-size: 16px; line-height: 1.6; color: #555;">${question.question}</p>
+                            </div>
+                            <div style="text-align: center; color: #888; font-size: 12px;">
+                                难度: ${question.difficulty}/100
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    
+                    question.options.forEach((option, index) => {
+                        const optionBtn = document.createElement('button');
+                        optionBtn.className = 'choice-btn';
+                        optionBtn.style.cssText = 'text-align: left; margin-bottom: 10px;';
+                        optionBtn.innerHTML = `<strong>${String.fromCharCode(65 + index)}.</strong> ${option}`;
+                        optionBtn.addEventListener('click', () => {
+                            this.answerExamQuestion(index);
+                        });
+                        choicesElement.appendChild(optionBtn);
+                    });
+                }
+            }
+        });
+    }
+
+    /**
+     * 回答考试题目
+     */
+    answerExamQuestion(selectedIndex) {
+        const exam = this.currentExam;
+        const question = exam.questions[exam.currentQuestion];
+        const isCorrect = selectedIndex === question.correct;
+        
+        if (isCorrect) {
+            exam.correctAnswers++;
+        }
+        
+        // 显示答题结果
+        this.showAnswerResult(isCorrect, question.options[question.correct]);
+    }
+
+    /**
+     * 显示答题结果
+     */
+    showAnswerResult(isCorrect, correctAnswer) {
+        const exam = this.currentExam;
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = isCorrect ? '回答正确！' : '回答错误';
+                }
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">${isCorrect ? '✅' : '❌'}</div>
+                            <div style="background: ${isCorrect ? '#e8f5e8' : '#ffebee'}; padding: 20px; border-radius: 10px;">
+                                <h4 style="color: ${isCorrect ? '#2e7d32' : '#d32f2f'}; margin-bottom: 15px;">
+                                    ${isCorrect ? '恭喜你答对了！' : '很遗憾答错了'}
+                                </h4>
+                                ${!isCorrect ? `<p style="color: #666;">正确答案是: ${correctAnswer}</p>` : ''}
+                                <div style="margin-top: 15px; color: #666; font-size: 14px;">
+                                    当前得分: ${exam.correctAnswers}/${exam.currentQuestion + 1}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const nextBtn = document.createElement('button');
+                    nextBtn.className = 'choice-btn';
+                    nextBtn.textContent = exam.currentQuestion + 1 < exam.totalQuestions ? '下一题' : '查看结果';
+                    nextBtn.addEventListener('click', () => {
+                        exam.currentQuestion++;
+                        if (exam.currentQuestion < exam.totalQuestions) {
+                            this.showExamQuestion();
+                        } else {
+                            this.showExamResult();
+                        }
+                    });
+                    choicesElement.appendChild(nextBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 显示考试结果
+     */
+    showExamResult() {
+        const exam = this.currentExam;
+        const score = (exam.correctAnswers / exam.totalQuestions) * 100;
+        const passed = score >= 60; // 60分及格
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = '考试结果';
+                }
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">${passed ? '🎉' : '😢'}</div>
+                            <div style="background: ${passed ? '#e8f5e8' : '#ffebee'}; padding: 20px; border-radius: 10px;">
+                                <h3 style="color: ${passed ? '#2e7d32' : '#d32f2f'}; margin-bottom: 15px;">
+                                    ${passed ? '恭喜通过考试！' : '考试未通过'}
+                                </h3>
+                                <div style="font-size: 24px; margin-bottom: 15px; color: #333;">
+                                    得分: ${score.toFixed(0)}分
+                                </div>
+                                <div style="color: #666; margin-bottom: 15px;">
+                                    正确题数: ${exam.correctAnswers}/${exam.totalQuestions}
+                                </div>
+                                <p style="color: #666; line-height: 1.6;">
+                                    ${passed ? 
+                                        '你成功通过了期末考试，可以升入下一年级！继续你的校园恋爱故事吧！' : 
+                                        '很遗憾，你需要留级重修。这可能会影响你与心仪角色的关系发展...'}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '继续游戏';
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                        this.processExamResult(passed);
+                    });
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 处理考试结果
+     */
+    processExamResult(passed) {
+        this.gameState.player.isExamTime = false;
+        
+        if (passed) {
+            // 通过考试，升级
+            this.gameState.player.grade++;
+            this.gameState.player.currentSemester++;
+            this.gameState.player.examsPassed.push(this.gameState.player.grade - 1);
+            
+            // 增加属性
+            this.updatePlayerStats({ 学习: 10, 理性: 5, 自信: 3 });
+            
+            this.showGradePromotion();
+        } else {
+            // 未通过考试，留级
+            this.gameState.player.knowledge = Math.max(0, this.gameState.player.knowledge - 20);
+            
+            // 影响与所有角色的关系
+            Object.keys(this.gameState.characterRelationships).forEach(characterName => {
+                this.updateRelationship(characterName, { affection: -5, trust: -3 });
+            });
+            
+            this.showRepeatGrade();
+        }
+        
+        this.updateUI();
+    }
+
+    /**
+     * 显示升级通知
+     */
+    showGradePromotion() {
+        const gradeNames = { 1: "大一", 2: "大二", 3: "大三", 4: "大四" };
+        const newGrade = this.gameState.player.grade;
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = '升级成功！';
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">🎓</div>
+                            <div style="background: #e8f5e8; padding: 20px; border-radius: 10px;">
+                                <h3 style="color: #2e7d32; margin-bottom: 15px;">升入${gradeNames[newGrade]}！</h3>
+                                <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+                                    恭喜你成功通过期末考试，现在你是${gradeNames[newGrade]}的学生了！
+                                    继续努力学习，追求你的校园恋情吧！
+                                </p>
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <h4 style="color: #333; margin-bottom: 10px;">📈 能力提升</h4>
+                                    <p style="color: #4caf50; margin: 0;">学习 +10, 理性 +5, 自信 +3</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '继续游戏';
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 显示留级通知
+     */
+    showRepeatGrade() {
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = '留级了...';
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">😢</div>
+                            <div style="background: #ffebee; padding: 20px; border-radius: 10px;">
+                                <h3 style="color: #d32f2f; margin-bottom: 15px;">很遗憾，你需要留级</h3>
+                                <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+                                    由于考试未通过，你需要重读这一年级。这影响了你与所有角色的关系，
+                                    他们可能会对你的学业表现感到失望...
+                                </p>
+                                <div style="background: #fff3e0; padding: 15px; border-radius: 8px;">
+                                    <h4 style="color: #f57c00; margin-bottom: 10px;">📉 关系影响</h4>
+                                    <p style="color: #ff5722; margin: 0;">所有角色好感度 -5, 信任度 -3</p>
+                                    <p style="color: #ff5722; margin: 5px 0 0 0;">知识值 -20</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '重新努力';
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 显示知识不足提示
+     */
+    showInsufficientKnowledge(requiredKnowledge) {
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = '学业不足';
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">📚</div>
+                            <div style="background: #fff3e0; padding: 20px; border-radius: 10px;">
+                                <h3 style="color: #f57c00; margin-bottom: 15px;">需要更多学习</h3>
+                                <p style="color: #666; line-height: 1.6; margin-bottom: 15px;">
+                                    你的知识水平还不够参加下一年级的期末考试。
+                                    继续学习更多课程来提升自己吧！
+                                </p>
+                                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px;">
+                                    <p style="color: #333; margin: 0;">
+                                        当前知识值: ${this.gameState.player.knowledge}<br>
+                                        升级所需: ${requiredKnowledge}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '继续学习';
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
                     choicesElement.appendChild(continueBtn);
                 }
             }

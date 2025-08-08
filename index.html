@@ -72,7 +72,7 @@
             </div>
             
             <!-- 手机端设置按钮 -->
-            <button class="mobile-settings-btn" onclick="toggleMobileSettings()">
+            <button class="mobile-settings-btn" id="mobile-settings-btn">
                 ⚙️
             </button>
             
@@ -163,7 +163,7 @@
                     <button id="save-game-btn" class="btn-save">💾 保存游戏</button>
                     <button id="settings-btn" class="btn-settings">⚙️ 游戏设置</button>
                     <button id="back-to-menu-btn" class="btn-menu">🏠 返回主菜单</button>
-                    <button onclick="nextWeek()" class="btn-next" id="next-week-btn" style="display: none;">⏭️ 下一周</button>
+                    <button id="next-week-btn" class="btn-next" style="display: none;">⏭️ 下一周</button>
                 </div>
             </div>
         </div>
@@ -172,7 +172,7 @@
     <!-- 角色创建弹窗 -->
     <div id="character-creation-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('character-creation-modal')">&times;</span>
+            <span class="modal-close" id="character-creation-close">&times;</span>
             <div class="creation-container">
                 <h2>创建角色</h2>
                 <div class="creation-form">
@@ -208,7 +208,7 @@
     <!-- 读取存档弹窗 -->
     <div id="load-game-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="game.smartCloseModal('load-game-modal')">&times;</span>
+            <span class="modal-close" id="load-game-modal-close">&times;</span>
             <h2>读取存档</h2>
             <div id="save-slots">
                 <!-- 存档槽位将由JavaScript动态生成 -->
@@ -219,7 +219,7 @@
     <!-- 成就系统弹窗 -->
     <div id="achievements-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="game.smartCloseModal('achievements-modal')">&times;</span>
+            <span class="modal-close" id="achievements-modal-close">&times;</span>
             <h2>成就系统</h2>
             <div id="achievements-list">
                 <!-- 成就列表将由JavaScript动态生成 -->
@@ -232,7 +232,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2 class="scenario-title">场景标题</h2>
-                <span class="modal-close" onclick="game.closeModal('scenario-modal')">&times;</span>
+                <span class="modal-close" id="scenario-modal-close">&times;</span>
             </div>
             <div class="modal-body">
                 <p class="scenario-description">场景描述内容...</p>
@@ -246,7 +246,7 @@
     <!-- 回忆相册弹窗 -->
     <div id="gallery-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="game.smartCloseModal('gallery-modal')">&times;</span>
+            <span class="modal-close" id="gallery-modal-close">&times;</span>
             <h2>回忆相册</h2>
             <div id="gallery-content">
                 <!-- 相册内容将由JavaScript动态生成 -->
@@ -257,7 +257,7 @@
     <!-- 设置弹窗 -->
     <div id="settings-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="game.smartCloseModal('settings-modal')">&times;</span>
+            <span class="modal-close" id="settings-modal-close">&times;</span>
             <h2>游戏设置</h2>
             <div class="settings-container">
                 <div class="setting-item">
@@ -273,7 +273,7 @@
                     <input type="checkbox" id="auto-save" checked>
                 </div>
                 <div class="setting-item">
-                    <button onclick="resetGameData()" style="background: #f44336;">重置游戏数据</button>
+                    <button id="reset-game-btn" style="background: #f44336;">重置游戏数据</button>
                 </div>
             </div>
         </div>
@@ -282,7 +282,7 @@
     <!-- 结局展示弹窗 -->
     <div id="ending-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="closeModal('ending-modal')">&times;</span>
+            <span class="modal-close" id="ending-modal-close">&times;</span>
             <div id="ending-content">
                 <!-- 结局内容将由JavaScript动态生成 -->
             </div>
@@ -292,7 +292,7 @@
     <!-- 角色选择弹窗 -->
     <div id="character-selection-modal" class="modal">
         <div class="modal-content">
-            <span class="modal-close" onclick="game.smartCloseModal('character-selection-modal')">&times;</span>
+            <span class="modal-close" id="character-selection-modal-close">&times;</span>
             <h2>选择角色</h2>
             <div id="character-selection">
                 <!-- 角色选择将由JavaScript动态生成 -->
@@ -305,19 +305,19 @@
         <div class="mobile-settings-content">
             <h3 class="mobile-settings-title">游戏菜单</h3>
             <div class="mobile-settings-buttons">
-                <button class="mobile-settings-btn-item btn-save" onclick="saveGame(); closeMobileSettings();">
+                <button class="mobile-settings-btn-item btn-save" id="mobile-save-btn">
                     💾 保存游戏
                 </button>
-                <button class="mobile-settings-btn-item btn-settings" onclick="showModal('settings-modal'); closeMobileSettings();">
+                <button class="mobile-settings-btn-item btn-settings" id="mobile-settings-modal-btn">
                     ⚙️ 游戏设置
                 </button>
-                <button class="mobile-settings-btn-item btn-next" onclick="nextWeek(); closeMobileSettings();" id="mobile-next-week-btn" style="display: none;">
+                <button class="mobile-settings-btn-item btn-next" id="mobile-next-week-btn" style="display: none;">
                     ⏭️ 下一周
                 </button>
-                <button class="mobile-settings-btn-item btn-menu" onclick="returnToMenu(); closeMobileSettings();">
+                <button class="mobile-settings-btn-item btn-menu" id="mobile-menu-btn">
                     🏠 返回主菜单
                 </button>
-                <button class="mobile-settings-btn-item" onclick="closeMobileSettings();" style="background: #6c757d; color: white;">
+                <button class="mobile-settings-btn-item" id="mobile-close-btn" style="background: #6c757d; color: white;">
                     ❌ 关闭菜单
                 </button>
             </div>
@@ -415,6 +415,39 @@
             
             game.logic.startGame(testPlayer);
             console.log('快速开始测试游戏');
+        };
+        
+        // 角色创建测试函数
+        window.testCharacterCreation = function() {
+            if (!game) {
+                console.error('游戏未初始化！');
+                return;
+            }
+            
+            console.log('=== 测试角色创建功能 ===');
+            
+            // 检查模态框是否存在
+            const modal = document.getElementById('character-creation-modal');
+            console.log('角色创建模态框:', modal ? '存在' : '不存在');
+            
+            // 检查表单元素
+            const nameInput = document.querySelector('#player-name');
+            const majorSelect = document.querySelector('#player-major');
+            const personalityRadios = document.querySelectorAll('input[name="personality"]');
+            
+            console.log('姓名输入框:', nameInput ? '存在' : '不存在');
+            console.log('专业选择器:', majorSelect ? '存在' : '不存在');
+            console.log('性格选项数量:', personalityRadios.length);
+            
+            // 尝试打开角色创建模态框
+            try {
+                game.showCharacterCreation();
+                console.log('✓ 角色创建模态框打开成功');
+            } catch (error) {
+                console.error('✗ 打开角色创建模态框失败:', error);
+            }
+            
+            console.log('=========================');
         };
     </script>
 </body>
