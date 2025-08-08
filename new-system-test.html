@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新系统测试 - 心动日记</title>
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <style>
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        .test-section {
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        .test-button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .test-button:hover {
+            background: #0056b3;
+        }
+        .test-result {
+            background: #fff;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .major-selector {
+            margin: 10px 0;
+        }
+        .major-selector select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .day-scheduler {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin: 20px 0;
+        }
+        .day-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+            text-align: center;
+            cursor: pointer;
+        }
+        .day-item:hover {
+            border-color: #007bff;
+        }
+        .day-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .day-type {
+            font-size: 12px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🌸 心动日记 - 新系统测试</h1>
+        
+        <div class="test-section">
+            <h2>1. 专业匹配系统测试</h2>
+            <div class="major-selector">
+                <label>选择专业：</label>
+                <select id="majorSelect">
+                    <option value="计算机科学">计算机科学</option>
+                    <option value="软件工程">软件工程</option>
+                    <option value="文学">文学</option>
+                    <option value="中文">中文</option>
+                    <option value="商学">商学</option>
+                    <option value="经济学">经济学</option>
+                    <option value="艺术">艺术</option>
+                    <option value="美术">美术</option>
+                    <option value="医学">医学</option>
+                    <option value="护理">护理</option>
+                </select>
+                <button class="test-button" onclick="testMajorMatching()">测试匹配</button>
+            </div>
+            <div id="majorResult" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>2. 每周活动系统测试</h2>
+            <div class="day-scheduler">
+                <div class="day-item" onclick="testDayActivity(1)">
+                    <div class="day-name">星期一</div>
+                    <div class="day-type">学习日</div>
+                </div>
+                <div class="day-item" onclick="testDayActivity(2)">
+                    <div class="day-name">星期二</div>
+                    <div class="day-type">社交日</div>
+                </div>
+                <div class="day-item" onclick="testDayActivity(3)">
+                    <div class="day-name">星期三</div>
+                    <div class="day-type">休闲日</div>
+                </div>
+                <div class="day-item" onclick="testDayActivity(4)">
+                    <div class="day-name">星期四</div>
+                    <div class="day-type">社交日</div>
+                </div>
+                <div class="day-item" onclick="testDayActivity(5)">
+                    <div class="day-name">星期五</div>
+                    <div class="day-type">学习日</div>
+                </div>
+                <div class="day-item" onclick="testDayActivity(6)">
+                    <div class="day-name">星期六</div>
+                    <div class="day-type">休闲日</div>
+                </div>
+                <div class="day-item" onclick="testDayActivity(0)">
+                    <div class="day-name">星期日</div>
+                    <div class="day-type">偶遇日</div>
+                </div>
+            </div>
+            <div id="dayResult" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>3. 角色偶遇系统测试</h2>
+            <button class="test-button" onclick="testEncounterSystem()">模拟偶遇</button>
+            <button class="test-button" onclick="testMultipleEncounters()">模拟多次偶遇</button>
+            <div id="encounterResult" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>4. 完整游戏流程测试</h2>
+            <button class="test-button" onclick="startTestGame()">开始测试游戏</button>
+            <button class="test-button" onclick="simulateWeek()">模拟一周</button>
+            <div id="gameResult" class="test-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h2>5. 故事线数据验证</h2>
+            <button class="test-button" onclick="validateStoryData()">验证故事线数据</button>
+            <div id="storyResult" class="test-result"></div>
+        </div>
+    </div>
+
+    <!-- 引入游戏脚本 -->
+    <script src="assets/js/data/GameData.js"></script>
+    <script src="assets/js/data/WeeklyActivityData.js"></script>
+    <script src="assets/js/core/GameEngine.js"></script>
+    <script src="assets/js/core/UIManager.js"></script>
+    <script src="assets/js/core/GameLogic.js"></script>
+
+    <script>
+        // 测试游戏实例
+        let testGameEngine = null;
+        let testGameLogic = null;
+
+        // 初始化测试环境
+        function initTestEnvironment() {
+            testGameEngine = new GameEngine();
+            testGameLogic = new GameLogic(testGameEngine);
+        }
+
+        // 测试专业匹配
+        function testMajorMatching() {
+            if (!testGameLogic) initTestEnvironment();
+            
+            const major = document.getElementById('majorSelect').value;
+            const matchedCharacter = testGameLogic.getMatchedCharacterByMajor(major);
+            const characterInfo = testGameLogic.getCharacterIntroInfo(matchedCharacter);
+            
+            document.getElementById('majorResult').innerHTML = `
+                <h3>匹配结果</h3>
+                <p><strong>专业：</strong>${major}</p>
+                <p><strong>匹配角色：</strong>${characterInfo.name}</p>
+                <p><strong>偶遇地点：</strong>${characterInfo.location}</p>
+                <p><strong>角色描述：</strong>${characterInfo.description}</p>
+                <p><strong>特长：</strong>${characterInfo.specialty}</p>
+            `;
+        }
+
+        // 测试每日活动
+        function testDayActivity(dayOfWeek) {
+            const dayTheme = WeeklyActivityData.getDayTheme(dayOfWeek);
+            const activities = WeeklyActivityData.getDayActivities(dayOfWeek);
+            
+            let activityHtml = `
+                <h3>${dayTheme.emoji} ${dayTheme.name}</h3>
+                <p style="color: ${dayTheme.color}"><strong>主题：</strong>${dayTheme.description}</p>
+                <h4>可用活动：</h4>
+            `;
+            
+            activities.forEach(activity => {
+                let encounterText = '';
+                if (activity.encounterChance) {
+                    const encounters = Object.entries(activity.encounterChance)
+                        .map(([char, chance]) => `${char}(${(chance*100).toFixed(0)}%)`)
+                        .join(', ');
+                    encounterText = `<br><small>偶遇机会: ${encounters}</small>`;
+                }
+                
+                let rewardsText = '';
+                if (activity.rewards) {
+                    const rewards = Object.entries(activity.rewards)
+                        .map(([type, amount]) => `${WeeklyActivityData.rewardTypes[type]}+${amount}`)
+                        .join(', ');
+                    rewardsText = `<br><small>奖励: ${rewards}</small>`;
+                }
+                
+                activityHtml += `
+                    <div style="background: #fff; padding: 10px; margin: 5px 0; border-radius: 5px; border-left: 3px solid ${dayTheme.color}">
+                        <strong>[${activity.timeRequired}点] ${activity.name}</strong>
+                        <br>${activity.description}
+                        ${rewardsText}
+                        ${encounterText}
+                    </div>
+                `;
+            });
+            
+            document.getElementById('dayResult').innerHTML = activityHtml;
+        }
+
+        // 测试偶遇系统
+        function testEncounterSystem() {
+            const activities = WeeklyActivityData.getDayActivities(0); // 星期日
+            const testActivity = activities[0]; // 选择第一个活动
+            
+            if (!testActivity.encounterChance) {
+                document.getElementById('encounterResult').innerHTML = '当前活动无偶遇机会';
+                return;
+            }
+            
+            let results = '';
+            for (let i = 0; i < 10; i++) {
+                const random = Math.random();
+                let cumulativeChance = 0;
+                let encountered = null;
+                
+                for (const [character, chance] of Object.entries(testActivity.encounterChance)) {
+                    cumulativeChance += chance;
+                    if (random <= cumulativeChance) {
+                        encountered = character;
+                        break;
+                    }
+                }
+                
+                results += `<p>测试 ${i+1}: ${encountered || '无偶遇'} (随机值: ${random.toFixed(3)})</p>`;
+            }
+            
+            document.getElementById('encounterResult').innerHTML = `
+                <h3>偶遇系统测试结果</h3>
+                <p><strong>测试活动：</strong>${testActivity.name}</p>
+                <p><strong>偶遇设置：</strong>${JSON.stringify(testActivity.encounterChance)}</p>
+                ${results}
+            `;
+        }
+
+        // 测试多次偶遇
+        function testMultipleEncounters() {
+            const characters = ['LinZhou', 'SongYunshen', 'ZhouYichen', 'TangYan', 'JiangChe'];
+            const encounterCounts = {};
+            const totalTests = 1000;
+            
+            characters.forEach(char => encounterCounts[char] = 0);
+            
+            for (let i = 0; i < totalTests; i++) {
+                const random = Math.random();
+                const baseChance = 0.2; // 每个角色20%基础概率
+                
+                characters.forEach(char => {
+                    if (random < baseChance) {
+                        encounterCounts[char]++;
+                    }
+                });
+            }
+            
+            let resultHtml = `<h3>多次偶遇统计 (${totalTests}次测试)</h3>`;
+            characters.forEach(char => {
+                const percentage = (encounterCounts[char] / totalTests * 100).toFixed(1);
+                resultHtml += `<p>${char}: ${encounterCounts[char]}次 (${percentage}%)</p>`;
+            });
+            
+            document.getElementById('encounterResult').innerHTML = resultHtml;
+        }
+
+        // 开始测试游戏
+        function startTestGame() {
+            if (!testGameLogic) initTestEnvironment();
+            
+            const testPlayerData = {
+                name: '测试玩家',
+                major: '计算机科学',
+                personality: '开朗'
+            };
+            
+            // 模拟游戏开始
+            testGameLogic.gameState = testGameLogic.initializeGameState();
+            testGameLogic.gameState.player = testPlayerData;
+            testGameLogic.gameState.matchedCharacter = testGameLogic.getMatchedCharacterByMajor(testPlayerData.major);
+            testGameLogic.gameState.metCharacters = new Set();
+            
+            const matchedInfo = testGameLogic.getCharacterIntroInfo(testGameLogic.gameState.matchedCharacter);
+            
+            document.getElementById('gameResult').innerHTML = `
+                <h3>测试游戏已开始</h3>
+                <p><strong>玩家：</strong>${testPlayerData.name}</p>
+                <p><strong>专业：</strong>${testPlayerData.major}</p>
+                <p><strong>性格：</strong>${testPlayerData.personality}</p>
+                <p><strong>匹配角色：</strong>${matchedInfo.name}</p>
+                <p><strong>当前周数：</strong>${testGameLogic.gameState.currentWeek}</p>
+                <p><strong>行动点：</strong>${testGameLogic.gameState.actionPoints}/${testGameLogic.gameState.maxActionPoints}</p>
+            `;
+        }
+
+        // 模拟一周
+        function simulateWeek() {
+            if (!testGameLogic || !testGameLogic.gameState.player) {
+                alert('请先开始测试游戏');
+                return;
+            }
+            
+            let weekResults = '<h3>一周模拟结果</h3>';
+            
+            for (let day = 1; day <= 7; day++) {
+                const dayOfWeek = (day - 1) % 7;
+                const dayTheme = WeeklyActivityData.getDayTheme(dayOfWeek);
+                const activities = WeeklyActivityData.getDayActivities(dayOfWeek);
+                
+                if (activities.length > 0 && testGameLogic.gameState.actionPoints > 0) {
+                    const randomActivity = activities[Math.floor(Math.random() * activities.length)];
+                    
+                    if (testGameLogic.gameState.actionPoints >= randomActivity.timeRequired) {
+                        testGameLogic.gameState.actionPoints -= randomActivity.timeRequired;
+                        
+                        // 检查偶遇
+                        let encountered = '';
+                        if (randomActivity.encounterChance) {
+                            const random = Math.random();
+                            let cumulativeChance = 0;
+                            
+                            for (const [character, chance] of Object.entries(randomActivity.encounterChance)) {
+                                cumulativeChance += chance;
+                                if (random <= cumulativeChance) {
+                                    testGameLogic.gameState.metCharacters.add(character);
+                                    encountered = ` - 遇到了${testGameLogic.getCharacterIntroInfo(character).name}!`;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        weekResults += `
+                            <p><strong>第${day}天 (${dayTheme.name}):</strong> 
+                            ${randomActivity.name} [消耗${randomActivity.timeRequired}点]${encountered}</p>
+                        `;
+                    } else {
+                        weekResults += `<p><strong>第${day}天:</strong> 行动点不足，休息</p>`;
+                    }
+                } else {
+                    weekResults += `<p><strong>第${day}天:</strong> 无可用活动或行动点不足</p>`;
+                }
+            }
+            
+            // 恢复行动点 (模拟下一周)
+            testGameLogic.gameState.currentWeek++;
+            testGameLogic.gameState.actionPoints = testGameLogic.gameState.maxActionPoints;
+            
+            weekResults += `
+                <hr>
+                <p><strong>第${testGameLogic.gameState.currentWeek}周开始</strong></p>
+                <p><strong>已认识角色：</strong>${Array.from(testGameLogic.gameState.metCharacters).map(char => 
+                    testGameLogic.getCharacterIntroInfo(char).name).join(', ') || '无'}</p>
+                <p><strong>行动点恢复到：</strong>${testGameLogic.gameState.actionPoints}/${testGameLogic.gameState.maxActionPoints}</p>
+            `;
+            
+            document.getElementById('gameResult').innerHTML = weekResults;
+        }
+
+        // 验证故事线数据
+        function validateStoryData() {
+            let validationResults = '<h3>故事线数据验证</h3>';
+            
+            // 验证WeeklyActivityData
+            const weekDays = Object.keys(WeeklyActivityData.weeklySchedule);
+            validationResults += `<p>✅ 每周活动数据：${weekDays.length}天的活动已定义</p>`;
+            
+            let totalActivities = 0;
+            weekDays.forEach(day => {
+                const activities = WeeklyActivityData.getDayActivities(parseInt(day));
+                totalActivities += activities.length;
+            });
+            validationResults += `<p>✅ 总活动数量：${totalActivities}个</p>`;
+            
+            // 验证角色数据
+            const characters = ['LinZhou', 'SongYunshen', 'ZhouYichen', 'TangYan', 'JiangChe'];
+            let charactersWithIntro = 0;
+            characters.forEach(char => {
+                try {
+                    const info = testGameLogic ? testGameLogic.getCharacterIntroInfo(char) : null;
+                    if (info) charactersWithIntro++;
+                } catch (e) {
+                    // 角色信息不存在
+                }
+            });
+            validationResults += `<p>✅ 角色介绍数据：${charactersWithIntro}/${characters.length}个角色有完整信息</p>`;
+            
+            // 验证专业匹配
+            const majors = ['计算机科学', '文学', '商学', '艺术', '医学'];
+            let majorsWithMatching = 0;
+            majors.forEach(major => {
+                try {
+                    const matched = testGameLogic ? testGameLogic.getMatchedCharacterByMajor(major) : null;
+                    if (matched) majorsWithMatching++;
+                } catch (e) {
+                    // 专业匹配不存在
+                }
+            });
+            validationResults += `<p>✅ 专业匹配系统：${majorsWithMatching}/${majors.length}个专业有匹配角色</p>`;
+            
+            // 验证奖励系统
+            const rewardTypes = Object.keys(WeeklyActivityData.rewardTypes);
+            validationResults += `<p>✅ 奖励系统：${rewardTypes.length}种奖励类型已定义</p>`;
+            
+            validationResults += `
+                <hr>
+                <h4>系统状态</h4>
+                <p>✅ WeeklyActivityData: ${typeof WeeklyActivityData !== 'undefined' ? '已加载' : '未加载'}</p>
+                <p>✅ GameData: ${typeof GameData !== 'undefined' ? '已加载' : '未加载'}</p>
+                <p>✅ GameLogic: ${testGameLogic ? '已初始化' : '未初始化'}</p>
+            `;
+            
+            document.getElementById('storyResult').innerHTML = validationResults;
+        }
+
+        // 页面加载完成后初始化
+        window.onload = function() {
+            initTestEnvironment();
+            
+            // 设置每日活动的颜色
+            const dayItems = document.querySelectorAll('.day-item');
+            const dayColors = ['#e91e63', '#2196f3', '#ff9800', '#4caf50', '#ff9800', '#2196f3', '#4caf50'];
+            
+            dayItems.forEach((item, index) => {
+                item.style.borderColor = dayColors[index];
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = dayColors[index] + '20';
+                });
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+            });
+        };
+    </script>
+</body>
+</html>

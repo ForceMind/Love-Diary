@@ -3,6 +3,15 @@
  * 整合所有角色、故事、场景、对话数据
  */
 const GameData = {
+    // 系统配置
+    systemConfig: {
+        autoActivity: {
+            baseActivityWeight: 3,   // 普通活动基础权重
+            courseWeight: 2,         // 课程权重
+            backgroundWeight: 1,     // 背景探索权重
+            backgroundUnlockMinWeek: 3 // 第几周后才随机进入背景探索
+        }
+    },
     // 角色基础信息
     characters: {
         顾言: {
@@ -600,7 +609,7 @@ const GameData = {
                     dialogue: "音乐不需要深奥的理论才能感受。你能感受到美，被音乐感动，这已经足够了。真正的音乐欣赏来自内心，而不是知识。",
                     choices: [
                         {
-                            text: "您的话让我很感动，我是${playerName}",
+                            text: "你的话让我很感动，我是${playerName}",
                             effect: { affection: 2, trust: 1, impression: 3 },
                             next: 6,
                             hint: "表达被感动的心情"
@@ -642,7 +651,7 @@ const GameData = {
                             hint: "表现出认真的学习态度"
                         },
                         {
-                            text: "谢谢您的善意，我叫${playerName}",
+                            text: "谢谢你的善意，我叫${playerName}",
                             effect: { affection: 2, trust: 2, impression: 2 },
                             next: "end",
                             hint: "感谢并自我介绍"
@@ -672,7 +681,7 @@ const GameData = {
                     dialogue: "音乐没有界限，任何人都可以享受它的美。我通常在下午4点后会在这里练习，如果你有时间，欢迎随时来听。",
                     choices: [
                         {
-                            text: "太好了，我叫${playerName}，谢谢您的邀请",
+                            text: "太好了，我叫${playerName}，谢谢你的邀请",
                             effect: { affection: 2, trust: 2, impression: 2 },
                             next: "end",
                             hint: "接受邀请并自我介绍"

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>行动点测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-panel {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .action-points {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2196f3;
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .log {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>行动点系统测试</h1>
+    
+    <div class="test-panel">
+        <h3>当前状态</h3>
+        <div class="action-points" id="actionPointsDisplay">行动点: 0/0</div>
+        <div>当前周: <span id="currentWeek">1</span></div>
+        <div>年级: <span id="currentGrade">1</span></div>
+    </div>
+    
+    <div class="test-panel">
+        <h3>测试操作</h3>
+        <button onclick="testStudyCourse()">学习课程 (消耗2点)</button>
+        <button onclick="testRegularActivity()">常规活动 (消耗1点)</button>
+        <button onclick="testNextWeek()">进入下一周</button>
+        <button onclick="testGradeUp()">模拟升级</button>
+        <button onclick="resetGame()">重置游戏</button>
+    </div>
+    
+    <div class="test-panel">
+        <h3>测试日志</h3>
+        <div class="log" id="testLog"></div>
+    </div>
+
+    <script>
+        // 模拟游戏状态
+        let gameState = {
+            currentWeek: 1,
+            actionPoints: 2,
+            maxActionPoints: 2,
+            player: { grade: 1 }
+        };
+
+        // 日志函数
+        function log(message) {
+            const logDiv = document.getElementById('testLog');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        // 更新UI显示
+        function updateUI() {
+            document.getElementById('actionPointsDisplay').textContent = 
+                `行动点: ${gameState.actionPoints}/${gameState.maxActionPoints}`;
+            document.getElementById('currentWeek').textContent = gameState.currentWeek;
+            document.getElementById('currentGrade').textContent = gameState.player.grade;
+            
+            log(`UI更新: 行动点 ${gameState.actionPoints}/${gameState.maxActionPoints}, 周 ${gameState.currentWeek}, 年级 ${gameState.player.grade}`);
+        }
+
+        // 模拟finishActivity方法
+        function finishActivity(actionPointCost = 1) {
+            if (gameState.actionPoints >= actionPointCost) {
+                gameState.actionPoints -= actionPointCost;
+                log(`消耗 ${actionPointCost} 行动点，剩余 ${gameState.actionPoints}/${gameState.maxActionPoints}`);
+                updateUI();
+                return true;
+            } else {
+                log(`行动点不足！需要 ${actionPointCost}，当前只有 ${gameState.actionPoints}`);
+                return false;
+            }
+        }
+
+        // 测试学习课程
+        function testStudyCourse() {
+            log('=== 测试学习课程 ===');
+            const success = finishActivity(2); // 课程消耗2点
+            if (success) {
+                log('课程学习完成');
+            }
+        }
+
+        // 测试常规活动
+        function testRegularActivity() {
+            log('=== 测试常规活动 ===');
+            const success = finishActivity(1); // 常规活动消耗1点
+            if (success) {
+                log('常规活动完成');
+            }
+        }
+
+        // 测试进入下一周
+        function testNextWeek() {
+            log('=== 测试进入下一周 ===');
+            gameState.currentWeek++;
+            
+            // 检查年级升级
+            const newGrade = Math.min(4, Math.floor((gameState.currentWeek - 1) / 20) + 1);
+            if (newGrade !== gameState.player.grade) {
+                gameState.player.grade = newGrade;
+                const gradeActionPoints = { 1: 2, 2: 3, 3: 5, 4: 7 };
+                gameState.maxActionPoints = gradeActionPoints[newGrade];
+                log(`年级提升到 ${newGrade}！最大行动点增加到 ${gameState.maxActionPoints}`);
+            }
+            
+            // 恢复行动点
+            gameState.actionPoints = gameState.maxActionPoints;
+            log(`进入第 ${gameState.currentWeek} 周，行动点恢复到 ${gameState.maxActionPoints}`);
+            
+            updateUI();
+        }
+
+        // 测试年级提升
+        function testGradeUp() {
+            log('=== 测试年级提升 ===');
+            gameState.currentWeek = 21; // 跳到第21周触发升级
+            gameState.player.grade = 2;
+            const gradeActionPoints = { 1: 2, 2: 3, 3: 5, 4: 7 };
+            gameState.maxActionPoints = gradeActionPoints[2];
+            gameState.actionPoints = gameState.maxActionPoints;
+            log(`模拟升级到年级 2，最大行动点变为 ${gameState.maxActionPoints}`);
+            updateUI();
+        }
+
+        // 重置游戏
+        function resetGame() {
+            log('=== 重置游戏 ===');
+            gameState = {
+                currentWeek: 1,
+                actionPoints: 2,
+                maxActionPoints: 2,
+                player: { grade: 1 }
+            };
+            log('游戏状态已重置');
+            updateUI();
+        }
+
+        // 初始化
+        window.onload = function() {
+            log('行动点系统测试启动');
+            updateUI();
+        };
+    </script>
+</body>
+</html>

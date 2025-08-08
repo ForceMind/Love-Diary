@@ -15,20 +15,21 @@ class StoryManager {
      * @param {string} characterName - 角色名称
      * @param {string} activityId - 活动ID
      * @param {string} storyType - 故事类型（first_meeting/interaction）
+     * @param {number} startRound - 开始轮次（可选）
      */
-    startStory(characterName, activityId, storyType) {
-        console.log(`开始故事: ${characterName} - ${activityId} - ${storyType}`);
+    startStory(characterName, activityId, storyType, startRound = 1) {
+        console.log(`开始故事: ${characterName} - ${activityId} - ${storyType} - 第${startRound}轮`);
         
         this.currentStory = {
             characterName,
             activityId,
             storyType,
-            round: 1,
+            round: startRound,
             choices: [],
             effects: {}
         };
 
-        this.showStoryRound(1);
+        this.showStoryRound(startRound);
     }
 
     /**
@@ -78,8 +79,8 @@ class StoryManager {
      */
     processStoryContent(content) {
         const processedContent = JSON.parse(JSON.stringify(content)); // 深拷贝
-        const playerName = this.gameLogic.gameState.player.name;
-        const playerMajor = this.gameLogic.gameState.player.major;
+    const playerName = this.gameLogic.gameState.player.name || '你';
+    const playerMajor = this.gameLogic.gameState.player.major || '';
 
         // 替换描述中的变量
         if (processedContent.description) {
@@ -98,6 +99,12 @@ class StoryManager {
         // 替换选择项中的变量
         if (processedContent.choices) {
             processedContent.choices.forEach(choice => {
+                // 先替换显式占位符
+                choice.text = choice.text
+                    .replace(/\$\{playerName\}/g, playerName)
+                    .replace(/\$\{playerMajor\}/g, playerMajor);
+
+                // 再进行模式标准化（防止玩家专业/名字被多余词覆盖）
                 choice.text = choice.text
                     .replace(/我叫.*?，/g, `我叫${playerName}，`)
                     .replace(/我是.*?系的/g, `我是${playerMajor}系的`);
@@ -248,14 +255,32 @@ class StoryManager {
         // 应用即时效果
         this.applyChoiceEffects(choice.effect);
         
+        // 更新故事进度
+        this.updateStoryProgress(choice.next);
+        
         // 检查下一步
         if (choice.next === 'end') {
             this.endStory();
         } else if (typeof choice.next === 'number') {
+            // 更新当前轮次
+            this.currentStory.round = choice.next;
             this.showStoryRound(choice.next);
         } else {
             // 特殊结局或其他处理
             this.handleSpecialNext(choice.next);
+        }
+    }
+    
+    /**
+     * 更新故事进度
+     */
+    updateStoryProgress(nextStep) {
+        const characterName = this.currentStory.characterName;
+        const meetStatus = this.gameLogic.gameState.characterMeetStatus[characterName];
+        const storyType = this.currentStory.storyType;
+        
+        if (storyType === 'first_meeting' && typeof nextStep === 'number') {
+            meetStatus.storyProgress.first_meeting.currentRound = nextStep;
         }
     }
 
@@ -333,10 +358,18 @@ class StoryManager {
     updateCharacterMeetStatus() {
         const characterName = this.currentStory.characterName;
         const meetStatus = this.gameLogic.gameState.characterMeetStatus[characterName];
+        const storyType = this.currentStory.storyType;
         
-        if (this.currentStory.storyType === 'first_meeting') {
+        if (storyType === 'first_meeting') {
             meetStatus.met = true;
             meetStatus.meetWeek = this.gameLogic.gameState.currentWeek;
+            meetStatus.storyProgress.first_meeting.completed = true;
+            meetStatus.storyProgress.first_meeting.currentRound = 0;
+        } else if (storyType === 'interaction') {
+            meetStatus.storyProgress.interaction.totalRounds = Math.max(
+                meetStatus.storyProgress.interaction.totalRounds,
+                this.currentStory.round
+            );
         }
         
         // 提升亲密等级

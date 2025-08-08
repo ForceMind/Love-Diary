@@ -34,11 +34,11 @@ class GameLogic {
                 major: '',
                 personality: '',
                 grade: 1,
-            knowledge: 0,
-            studyProgress: 0,
-            examsPassed: [],
-            currentSemester: 1,
-            isExamTime: false  // 年级：1=大一, 2=大二, 3=大三, 4=大四
+                knowledge: 0,
+                studyProgress: 0,
+                examsPassed: [],
+                currentSemester: 1,
+                isExamTime: false
             },
             currentWeek: 1,
             currentDay: 1,
@@ -100,7 +100,12 @@ class GameLogic {
                 met: false,           // 是否认识
                 meetWeek: 0,         // 认识的周数
                 intimacyLevel: 0,    // 亲密等级
-                lastInteraction: 0   // 最后互动周数
+                lastInteraction: 0,   // 最后互动周数
+                storyProgress: {      // 故事进度追踪
+                    first_meeting: { completed: false, currentRound: 0 },
+                    interaction: { completed: false, currentRound: 0, totalRounds: 0 },
+                    background_exploration: { unlocked: [], completed: [] }
+                }
             };
         });
     }
@@ -112,17 +117,58 @@ class GameLogic {
         console.log('开始新游戏，玩家数据:', playerData);
         
         // 设置玩家信息
-        this.gameState.player = { ...playerData, grade: 1 };
+        const safeName = (playerData.name || '').trim() || '新生';
+        this.gameState.player = { ...playerData, name: safeName, grade: 1 };
+        
+        // 根据专业确定主要匹配角色
+        this.gameState.matchedCharacter = this.getMatchedCharacterByMajor(this.gameState.player.major);
         
         // 初始化角色关系
         this.initializeCharacterRelationships();
         
-        // 检查是否是全新游戏
-        if (this.gameState.currentWeek === 1 && this.gameState.actionPoints === 2) {
-            this.showIntroStoryline();
-        } else {
-            this.showGameScreen();
-        }
+        // 重置为全新游戏状态
+        this.gameState.currentWeek = 1;
+        this.gameState.currentDay = 1;
+        this.gameState.actionPoints = 2;
+        this.gameState.maxActionPoints = 2;
+        
+        // 初始化遇见状态
+        this.gameState.metCharacters = new Set();
+        
+        // 更新UI显示
+        this.updateUI();
+        
+        // 始终显示新手引导
+        this.showIntroStoryline();
+    }
+
+    /**
+     * 根据专业匹配主要角色
+     */
+    getMatchedCharacterByMajor(major) {
+        const majorToCharacter = {
+            '计算机科学': 'LinZhou',
+            '软件工程': 'LinZhou', 
+            '信息技术': 'LinZhou',
+            '文学': 'SongYunshen',
+            '中文': 'SongYunshen',
+            '历史': 'SongYunshen',
+            '哲学': 'SongYunshen',
+            '商学': 'ZhouYichen',
+            '经济学': 'ZhouYichen', 
+            '管理学': 'ZhouYichen',
+            '金融': 'ZhouYichen',
+            '艺术': 'TangYan',
+            '美术': 'TangYan',
+            '设计': 'TangYan',
+            '音乐': 'TangYan',
+            '医学': 'JiangChe',
+            '护理': 'JiangChe',
+            '生物': 'JiangChe',
+            '化学': 'JiangChe'
+        };
+        
+        return majorToCharacter[major] || 'LinZhou'; // 默认匹配林舟
     }
 
     /**
@@ -144,6 +190,9 @@ class GameLogic {
             const gradeActionPoints = { 1: 2, 2: 3, 3: 5, 4: 7 };
             this.gameState.maxActionPoints = gradeActionPoints[newGrade];
             this.gameState.actionPoints = this.gameState.maxActionPoints;
+            
+            // 更新UI显示
+            this.updateUI();
             
             this.showGradeUpNotification(oldGrade, newGrade);
         }
@@ -196,24 +245,331 @@ class GameLogic {
 
     // 自动执行活动
     autoExecuteDayActivity(day) {
-        const activities = this.getAvailableActivities(day);
-        const pool = [...activities.map(a => ({ type: 'activity', ref: a }))];
-        // 添加课程权重（基础/专业 早期更常见）
-        const grade = this.gameState.player.grade;
-        const subjects = Object.entries(GameData.academicSystem.subjects)
-            .filter(([k]) => !(k === '高级课程' && grade < 3) && !(k === '研究项目' && grade < 4));
-        subjects.forEach(([name, s]) => pool.push({ type: 'course', ref: { name, data: s } }));
-
-        if (pool.length === 0) {
+        // 使用新的每周活动系统
+        const dayOfWeek = (day - 1) % 7; // 转换为星期 (0=星期日, 1=星期一...)
+        const dayTheme = WeeklyActivityData.getDayTheme(dayOfWeek);
+        const dayActivities = WeeklyActivityData.getDayActivities(dayOfWeek);
+        
+        // 根据已遇见角色过滤偶遇机会
+        const filteredActivities = WeeklyActivityData.filterEncountersByMet(dayActivities, this.gameState.metCharacters);
+        
+        if (filteredActivities.length === 0) {
             this.engine.showNotification('当前无可执行活动', 'warning');
             return;
         }
-        const choice = pool[Math.floor(Math.random() * pool.length)];
-        if (choice.type === 'activity') {
-            this.startActivity(choice.ref.id, day);
-        } else if (choice.type === 'course') {
-            this.studyCourse(choice.ref.name, { auto: true });
+        
+        // 显示今日主题和活动选择
+        this.showDayActivityChoice(day, dayTheme, filteredActivities);
+    }
+
+    /**
+     * 显示当日活动选择
+     */
+    showDayActivityChoice(day, dayTheme, activities) {
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = `${dayTheme.emoji} ${dayTheme.name}`;
+                }
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">${dayTheme.emoji}</div>
+                            <div style="background: ${dayTheme.color}20; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 2px solid ${dayTheme.color};">
+                                <h4 style="color: ${dayTheme.color}; margin-bottom: 10px;">${dayTheme.name}</h4>
+                                <p style="line-height: 1.6; color: #555; margin: 0; font-size: 14px;">
+                                    ${dayTheme.description}
+                                </p>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                                <p style="color: #666; font-size: 13px; margin: 0;">
+                                    选择一个活动来度过这一天，不同的选择可能带来不同的收获...
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    
+                    activities.forEach((activity, index) => {
+                        const btn = document.createElement('button');
+                        btn.className = 'choice-btn';
+                        btn.style.marginBottom = '8px';
+                        btn.style.textAlign = 'left';
+                        btn.style.position = 'relative';
+                        
+                        // 显示行动点消耗
+                        const costIndicator = activity.timeRequired > 1 ? 
+                            `<span style="color: #ff6b9d; font-weight: bold;">[${activity.timeRequired}点]</span> ` : 
+                            `<span style="color: #4caf50; font-weight: bold;">[1点]</span> `;
+                        
+                        btn.innerHTML = `
+                            ${costIndicator}${activity.name}
+                            <div style="font-size: 12px; color: #666; margin-top: 4px;">
+                                ${activity.description}
+                            </div>
+                        `;
+                        
+                        // 检查是否有足够的行动点
+                        if (this.gameState.actionPoints < activity.timeRequired) {
+                            btn.disabled = true;
+                            btn.style.opacity = '0.5';
+                            btn.style.cursor = 'not-allowed';
+                        }
+                        
+                        btn.addEventListener('click', () => {
+                            if (this.gameState.actionPoints >= activity.timeRequired) {
+                                this.executeWeeklyActivity(day, activity, dayTheme);
+                            }
+                        });
+                        
+                        choicesElement.appendChild(btn);
+                    });
+                    
+                    // 添加返回按钮
+                    const backBtn = document.createElement('button');
+                    backBtn.textContent = '返回';
+                    backBtn.className = 'choice-btn';
+                    backBtn.style.background = '#666';
+                    backBtn.style.marginTop = '10px';
+                    
+                    backBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
+                    
+                    choicesElement.appendChild(backBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 执行每周活动
+     */
+    executeWeeklyActivity(day, activity, dayTheme) {
+        this.engine.closeModal('scenario-modal');
+        
+        // 消耗行动点
+        this.gameState.actionPoints -= activity.timeRequired;
+        
+        // 应用奖励
+        this.applyActivityRewards(activity.rewards);
+        
+        // 更新周统计
+        this.gameState.weekStats[dayTheme.type] += 1;
+        
+        // 检查偶遇机会
+        const encounteredCharacter = this.checkEncounterChance(activity.encounterChance);
+        
+        // 显示活动结果
+        this.showActivityResult(activity, dayTheme, encounteredCharacter);
+    }
+
+    /**
+     * 应用活动奖励
+     */
+    applyActivityRewards(rewards) {
+        if (!rewards) return;
+        
+        Object.entries(rewards).forEach(([rewardType, amount]) => {
+            // 这里可以根据奖励类型更新玩家属性
+            // 目前先简单记录
+            if (!this.gameState.playerRewards) {
+                this.gameState.playerRewards = {};
+            }
+            
+            if (!this.gameState.playerRewards[rewardType]) {
+                this.gameState.playerRewards[rewardType] = 0;
+            }
+            
+            this.gameState.playerRewards[rewardType] += amount;
+        });
+    }
+
+    /**
+     * 检查偶遇机会
+     */
+    checkEncounterChance(encounterChance) {
+        if (!encounterChance) return null;
+        
+        const random = Math.random();
+        let cumulativeChance = 0;
+        
+        for (const [character, chance] of Object.entries(encounterChance)) {
+            cumulativeChance += chance;
+            if (random <= cumulativeChance) {
+                // 标记角色为已遇见
+                this.gameState.metCharacters.add(character);
+                return character;
+            }
         }
+        
+        return null;
+    }
+
+    /**
+     * 显示活动结果
+     */
+    showActivityResult(activity, dayTheme, encounteredCharacter) {
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = `${activity.name} - 完成`;
+                }
+                
+                if (descElement) {
+                    let rewardsText = '';
+                    if (activity.rewards) {
+                        rewardsText = Object.entries(activity.rewards)
+                            .map(([type, amount]) => `${WeeklyActivityData.rewardTypes[type] || type} +${amount}`)
+                            .join('、');
+                    }
+                    
+                    let encounterText = '';
+                    if (encounteredCharacter) {
+                        const characterInfo = this.getCharacterIntroInfo(encounteredCharacter);
+                        encounterText = `
+                            <div style="background: linear-gradient(135deg, #ff6b9d20 0%, #c4456920 100%); padding: 15px; border-radius: 10px; margin: 15px 0; border: 2px solid #ff6b9d;">
+                                <h4 style="color: #ff6b9d; margin-bottom: 10px;">💫 意外的相遇</h4>
+                                <p style="color: #555; margin: 0;">
+                                    在${activity.name}的过程中，你遇到了${characterInfo.name}！
+                                </p>
+                            </div>
+                        `;
+                    }
+                    
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">${dayTheme.emoji}</div>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                                <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                                    ${activity.description}
+                                </p>
+                                ${rewardsText ? `
+                                    <div style="background: #e8f5e8; padding: 10px; border-radius: 8px;">
+                                        <p style="color: #2e7d32; font-weight: 500; margin: 0; font-size: 14px;">
+                                            ✨ 获得：${rewardsText}
+                                        </p>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${encounterText}
+                            <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 12px; border-radius: 8px;">
+                                <p style="color: #1976d2; font-weight: 500; margin: 0; font-size: 14px;">
+                                    🎯 剩余行动点：${this.gameState.actionPoints}/${this.gameState.maxActionPoints}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    
+                    if (encounteredCharacter) {
+                        // 如果遇到角色，提供互动选项
+                        const interactBtn = document.createElement('button');
+                        interactBtn.textContent = `与${this.getCharacterIntroInfo(encounteredCharacter).name}互动`;
+                        interactBtn.className = 'choice-btn';
+                        interactBtn.style.background = '#ff6b9d';
+                        
+                        interactBtn.addEventListener('click', () => {
+                            this.engine.closeModal('scenario-modal');
+                            this.startCharacterInteraction(encounteredCharacter);
+                        });
+                        
+                        choicesElement.appendChild(interactBtn);
+                    }
+                    
+                    const continueBtn = document.createElement('button');
+                    continueBtn.textContent = '继续';
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.style.background = '#4caf50';
+                    
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                        this.finishActivity(activity.timeRequired);
+                    });
+                    
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 开始角色互动
+     */
+    startCharacterInteraction(characterName) {
+        // 这里可以调用现有的角色互动系统
+        // 暂时简单处理
+        const characterInfo = this.getCharacterIntroInfo(characterName);
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) {
+                    titleElement.textContent = `与${characterInfo.name}的互动`;
+                }
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
+                                <p style="line-height: 1.6; color: #555;">
+                                    你遇到了${characterInfo.name}，可以选择如何与他互动...
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    
+                    const choices = [
+                        { text: '主动打招呼', affection: 2 },
+                        { text: '微笑点头', affection: 1 },
+                        { text: '观察一下再说', affection: 1 },
+                        { text: '暂时不打扰', affection: 0 }
+                    ];
+                    
+                    choices.forEach(choice => {
+                        const btn = document.createElement('button');
+                        btn.textContent = choice.text;
+                        btn.className = 'choice-btn';
+                        btn.style.marginBottom = '8px';
+                        
+                        btn.addEventListener('click', () => {
+                            if (choice.affection > 0) {
+                                this.updateCharacterRelationship(characterName, {
+                                    affection: this.gameState.characterRelationships[characterName].affection + choice.affection
+                                });
+                            }
+                            
+                            this.engine.closeModal('scenario-modal');
+                            this.finishActivity(0); // 互动不额外消耗行动点
+                        });
+                        
+                        choicesElement.appendChild(btn);
+                    });
+                }
+            }
+        });
     }
 
     /**
@@ -467,25 +823,173 @@ class GameLogic {
      * 开始角色故事
      */
     startCharacterStory(characterName, activityId) {
-        const isMet = this.gameState.characterMeetStatus[characterName]?.met;
-        const storyType = isMet ? 'interaction' : 'first_meeting';
+        const meetStatus = this.gameState.characterMeetStatus[characterName];
+        const storyProgress = meetStatus?.storyProgress;
+        
         if (!this.storyManager) {
             console.warn('StoryManager 未初始化，创建临时实例');
             this.storyManager = new StoryManager(this);
         }
-        this.storyManager.startStory(characterName, activityId, storyType);
+        
+        // 确定故事类型和轮次
+        let storyType, round;
+        
+        if (!meetStatus?.met) {
+            // 初次相遇
+            storyType = 'first_meeting';
+            round = 1;
+            storyProgress.first_meeting.currentRound = 1;
+        } else {
+            // 判断是否有未完成的first_meeting
+            if (!storyProgress.first_meeting.completed) {
+                storyType = 'first_meeting';
+                round = storyProgress.first_meeting.currentRound || 1;
+            } else {
+                // 进行日常互动
+                storyType = 'interaction';
+                round = this.getNextInteractionRound(characterName);
+            }
+        }
+        
+        // 检查是否有静态故事数据
+        const hasStatic = GameData.storyData?.[storyType]?.[characterName]?.[round];
+        
+        if (hasStatic) {
+            this.storyManager.startStory(characterName, activityId, storyType, round);
+        } else if (GameData.dynamicStories?.interactions?.[characterName]) {
+            // 使用动态故事作为后备
+            this.startDynamicInteraction(characterName);
+        } else {
+            // 完全没有故事内容，显示简单互动
+            this.showSimpleInteraction(characterName, activityId);
+        }
+    }
+    
+    /**
+     * 获取下一个互动轮次
+     */
+    getNextInteractionRound(characterName) {
+        const storyProgress = this.gameState.characterMeetStatus[characterName].storyProgress;
+        const relationship = this.gameState.characterRelationships[characterName];
+        
+        // 根据关系深度决定互动类型
+        if (relationship.affection >= 60 && relationship.trust >= 50) {
+            // 深度互动
+            return Math.min(5, storyProgress.interaction.totalRounds + 1);
+        } else if (relationship.affection >= 30) {
+            // 中等互动
+            return Math.min(3, storyProgress.interaction.totalRounds + 1);
+        } else {
+            // 浅层互动
+            return Math.min(2, storyProgress.interaction.totalRounds + 1);
+        }
+    }
+    
+    /**
+     * 显示简单互动（当没有具体故事时）
+     */
+    showSimpleInteraction(characterName, activityId) {
+        const character = GameData.characters[characterName];
+        const relationship = this.gameState.characterRelationships[characterName];
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = `与${characterName}的互动`;
+                
+                if (descElement) {
+                    const affectionLevel = relationship.affection < 20 ? '陌生' : 
+                                         relationship.affection < 50 ? '熟悉' : 
+                                         relationship.affection < 80 ? '亲密' : '深爱';
+                    
+                    descElement.innerHTML = `
+                        <div style="padding: 20px; text-align: center;">
+                            <div style="font-size: 48px; margin-bottom: 15px;">💭</div>
+                            <p style="line-height: 1.6; color: #555;">
+                                你和${characterName}进行了愉快的交流。虽然没有特别的事件发生，
+                                但你们的关系正在慢慢发展。
+                            </p>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-top: 15px;">
+                                <p style="color: #666; margin: 0;">当前关系：${affectionLevel}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '继续';
+                    continueBtn.addEventListener('click', () => {
+                        // 给予小幅关系提升
+                        this.updateCharacterRelationship(characterName, { affection: 1, trust: 1 });
+                        this.engine.closeModal('scenario-modal');
+                        this.finishActivity();
+                    });
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    // 动态交互回退
+    startDynamicInteraction(characterName) {
+        const pool = GameData.dynamicStories?.interactions?.[characterName];
+        if (!pool || pool.length === 0) {
+            console.warn('无动态交互数据');
+            this.finishActivity();
+            return;
+        }
+        const item = pool[Math.floor(Math.random()*pool.length)];
+        // 占位符替换（动态描述中可能也会含有 ${playerName}/${playerMajor}）
+        const playerName = this.gameState.player.name || '你';
+        const playerMajor = this.gameState.player.major || '';
+        const replaceVars = (text) => text
+            .replace(/\$\{playerName\}/g, playerName)
+            .replace(/\$\{playerMajor\}/g, playerMajor);
+        item.summary = replaceVars(item.summary);
+        item.description = replaceVars(item.description);
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                if (titleElement) titleElement.textContent = `${characterName} · ${item.summary}`;
+                if (descElement) {
+                    descElement.innerHTML = `<div style=\"padding:15px;\"><p style=\"line-height:1.6;color:#555;\">${item.description}</p></div>`;
+                }
+                if (choicesElement) {
+                    choicesElement.innerHTML='';
+                    item.choices.forEach(ch => {
+                        const btn = document.createElement('button');
+                        btn.className='choice-btn';
+                        btn.textContent = ch.text;
+                        btn.addEventListener('click', () => {
+                            this.updateCharacterRelationship(characterName, ch.effect || {});
+                            this.engine.closeModal('scenario-modal');
+                            this.finishActivity();
+                        });
+                        choicesElement.appendChild(btn);
+                    });
+                }
+            }
+        });
     }
 
     /**
      * 完成活动
      */
-    finishActivity() {
+    finishActivity(actionPointCost = 1) {
         // 消耗行动点
-        this.gameState.actionPoints = Math.max(0, this.gameState.actionPoints - 1);
+        this.gameState.actionPoints = Math.max(0, this.gameState.actionPoints - actionPointCost);
         
         // 更新周统计
         this.updateWeekStats();
-    this.updateUI();
+        this.updateUI();
         
         // 检查是否需要进入下一周
         if (this.gameState.actionPoints <= 0) {
@@ -584,6 +1088,9 @@ class GameLogic {
             study: 0, social: 0, leisure: 0, encounter: 0
         };
         
+        // 更新UI显示
+        this.updateUI();
+        
         this.engine.showNotification(`进入第${this.gameState.currentWeek}周！`, 'success');
         console.log('进入新的一周:', this.gameState.currentWeek);
     }
@@ -625,6 +1132,10 @@ class GameLogic {
      * 新手引导
      */
     showIntroStoryline() {
+        // 获取匹配的角色信息
+        const matchedChar = this.gameState.matchedCharacter;
+        const characterInfo = this.getCharacterIntroInfo(matchedChar);
+        
         this.engine.showModal('scenario-modal', {
             onShow: (modal) => {
                 const titleElement = modal.querySelector('.scenario-title');
@@ -645,13 +1156,12 @@ class GameLogic {
                                 </p>
                                 <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
                                     <p style="color: #1976d2; font-weight: 500; margin: 0; font-size: 13px; line-height: 1.4;">
-                                        💡 游戏玩法：现在是大一，每周2个行动点数<br>
-                                        每20周升一年级，行动点数会增加<br>
-                                        点击日期进行活动，与角色互动提升好感度
+                                        💡 游戏提示：基于你的专业，你更容易在<strong>${characterInfo.location}</strong>遇到有趣的人<br>
+                                        记住：每周2个行动点，星期日是偶遇的最佳时机
                                     </p>
                                 </div>
                                 <p style="line-height: 1.4; color: #555; font-size: 13px;">
-                                    你将遇到：学霸顾言、阳光林舟、优雅宋之南、可爱周奕辰、才华江澈、温柔苏云深、强势唐言，还有神秘的萧然...
+                                    这里有各种性格的男生等待与你相遇，每一个选择都会影响你们的故事...
                                 </p>
                             </div>
                         </div>
@@ -664,28 +1174,367 @@ class GameLogic {
                     const startBtn = document.createElement('button');
                     startBtn.textContent = '开始我的校园生活！';
                     startBtn.className = 'choice-btn';
-                    startBtn.style.cssText = `
-                        background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%) !important;
-                        color: white !important;
-                        padding: 18px 30px !important;
-                        border-radius: 30px !important;
-                        border: 3px solid #ff8fab !important;
-                        font-size: 18px !important;
-                        font-weight: 700 !important;
-                        cursor: pointer !important;
-                        width: 100% !important;
-                        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4) !important;
-                    `;
+                    startBtn.style.background = 'linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)';
+                    startBtn.style.color = 'white';
+                    startBtn.style.padding = '18px 30px';
+                    startBtn.style.borderRadius = '30px';
+                    startBtn.style.border = '3px solid #ff8fab';
+                    startBtn.style.fontSize = '18px';
+                    startBtn.style.fontWeight = '700';
+                    startBtn.style.cursor = 'pointer';
+                    startBtn.style.width = '100%';
+                    startBtn.style.boxShadow = '0 6px 20px rgba(255, 107, 157, 0.4)';
                     
                     startBtn.addEventListener('click', () => {
                         this.engine.closeModal('scenario-modal');
                         this.showGameScreen();
+                        // 自动触发第一次偶遇
+                        setTimeout(() => {
+                            this.triggerFirstEncounter();
+                        }, 1000);
                     });
                     
                     choicesElement.appendChild(startBtn);
                 }
             }
         });
+    }
+
+    /**
+     * 获取角色介绍信息
+     */
+    getCharacterIntroInfo(characterName) {
+        const characterIntros = {
+            'LinZhou': {
+                name: '林舟',
+                location: '计算机实验室',
+                description: '技术宅学霸，内向但温柔',
+                specialty: '编程'
+            },
+            'SongYunshen': {
+                name: '宋云深', 
+                location: '图书馆',
+                description: '文艺诗人，浪漫主义',
+                specialty: '文学创作'
+            },
+            'ZhouYichen': {
+                name: '周弈辰',
+                location: '学生会办公室', 
+                description: '商业精英，自信果断',
+                specialty: '领导力'
+            },
+            'TangYan': {
+                name: '唐彦',
+                location: '美术教室',
+                description: '艺术家，自由奔放',
+                specialty: '绘画'
+            },
+            'JiangChe': {
+                name: '江澈',
+                location: '校医院',
+                description: '温柔医生，责任感强',
+                specialty: '医学'
+            }
+        };
+        
+        return characterIntros[characterName] || characterIntros['LinZhou'];
+    }
+
+    /**
+     * 触发第一次偶遇
+     */
+    triggerFirstEncounter() {
+        const matchedChar = this.gameState.matchedCharacter;
+        const characterInfo = this.getCharacterIntroInfo(matchedChar);
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = '意外的相遇';
+                
+                if (descElement) {
+                    descElement.innerHTML = this.getFirstEncounterStory(matchedChar, characterInfo);
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    this.createFirstEncounterChoices(choicesElement, matchedChar);
+                }
+            }
+        });
+    }
+
+    /**
+     * 获取第一次偶遇的故事内容
+     */
+    getFirstEncounterStory(characterName, characterInfo) {
+        const stories = {
+            'LinZhou': `
+                <div style="text-align: left; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="color: #1976d2; margin-bottom: 10px;">📍 ${characterInfo.location}</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            已经是晚上九点了，计算机实验室里只剩下几台电脑还在运行。你正准备离开，突然听到键盘敲击的声音。
+                        </p>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            角落里，一个男生正专注地盯着屏幕，手指在键盘上飞快地舞动。他的桌上放着一杯已经凉透的咖啡，
+                            旁边散落着几张写满代码的草稿纸。
+                        </p>
+                        <div style="background: #fff; padding: 12px; border-left: 4px solid #ff6b9d; margin: 10px 0;">
+                            <p style="margin: 0; font-style: italic; color: #666;">
+                                "又是编译错误..."他轻声嘀咕着，揉了揉太阳穴。
+                            </p>
+                        </div>
+                        <p style="line-height: 1.6; color: #555;">
+                            这个男生似乎遇到了什么问题，你可以选择...
+                        </p>
+                    </div>
+                </div>
+            `,
+            'SongYunshen': `
+                <div style="text-align: left; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #fff3e0 0%, #f3e5f5 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="color: #f57c00; margin-bottom: 10px;">📍 ${characterInfo.location}</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            夕阳透过图书馆的落地窗洒在古典文学区，金色的光线为整个空间增添了诗意的氛围。
+                        </p>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            你正在寻找一本《唐诗三百首》，却发现不远处的桌子上，一个男生正在专心地手写着什么。
+                            他的身边放着一本《诗经》，旁边还有几张写满诗句的稿纸。
+                        </p>
+                        <div style="background: #fff; padding: 12px; border-left: 4px solid #ff6b9d; margin: 10px 0;">
+                            <p style="margin: 0; font-style: italic; color: #666;">
+                                "关关雎鸠，在河之洲..."他轻声朗读着，笔尖在纸上轻柔地划过。
+                            </p>
+                        </div>
+                        <p style="line-height: 1.6; color: #555;">
+                            在这个数字化的时代，还有人用手写诗歌，真是令人好奇...
+                        </p>
+                    </div>
+                </div>
+            `,
+            'ZhouYichen': `
+                <div style="text-align: left; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f3e5f5 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="color: #4caf50; margin-bottom: 10px;">📍 ${characterInfo.location}</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            你走错了路，误打误撞地推开了学生会办公室的门。里面传来清晰而有条理的声音。
+                        </p>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            一个穿着得体的男生正在主持会议，他的声音充满自信，手势优雅而有力。
+                            桌上摆放着整齐的文件和策划案，白板上写满了活动安排。
+                        </p>
+                        <div style="background: #fff; padding: 12px; border-left: 4px solid #ff6b9d; margin: 10px 0;">
+                            <p style="margin: 0; font-style: italic; color: #666;">
+                                "这次的社团招新活动，我们需要创新的思路..."他正在发表着自己的观点。
+                            </p>
+                        </div>
+                        <p style="line-height: 1.6; color: #555;">
+                            他注意到了门口的你，停下了讲话，其他学生会成员也转过头来...
+                        </p>
+                    </div>
+                </div>
+            `,
+            'TangYan': `
+                <div style="text-align: left; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #fff8e1 0%, #f3e5f5 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="color: #ff9800; margin-bottom: 10px;">📍 ${characterInfo.location}</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            美术教室里弥漫着颜料的味道，阳光从天窗洒下，照亮了满墙的画作。
+                        </p>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            你被门口展示的一幅色彩绚烂的油画吸引，正准备细看，却听到里面传来画笔与画布摩擦的声音。
+                            一个男生正站在画架前，专注地调配着颜料。
+                        </p>
+                        <div style="background: #fff; padding: 12px; border-left: 4px solid #ff6b9d; margin: 10px 0;">
+                            <p style="margin: 0; font-style: italic; color: #666;">
+                                "这个蓝色还是不够纯净..."他一边自言自语，一边在调色板上尝试不同的色彩搭配。
+                            </p>
+                        </div>
+                        <p style="line-height: 1.6; color: #555;">
+                            他的作品是一幅描绘校园春景的画，生动而富有感情...
+                        </p>
+                    </div>
+                </div>
+            `,
+            'JiangChe': `
+                <div style="text-align: left; padding: 20px;">
+                    <div style="background: linear-gradient(135deg, #e1f5fe 0%, #f3e5f5 100%); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="color: #0277bd; margin-bottom: 10px;">📍 ${characterInfo.location}</h4>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            你因为轻微的头痛来到校医院，却发现这里比想象中要安静温馨。
+                        </p>
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 10px;">
+                            一个穿着白大褂的男生正在认真地整理药品，动作轻柔而专业。
+                            他注意到了你的到来，立刻放下手中的工作，温和地询问。
+                        </p>
+                        <div style="background: #fff; padding: 12px; border-left: 4px solid #ff6b9d; margin: 10px 0;">
+                            <p style="margin: 0; font-style: italic; color: #666;">
+                                "同学，你哪里不舒服？需要我帮助吗？"他的声音温柔而关切。
+                            </p>
+                        </div>
+                        <p style="line-height: 1.6; color: #555;">
+                            他的眼神中透着真诚的关心，让人不由得感到安心...
+                        </p>
+                    </div>
+                </div>
+            `
+        };
+        
+        return stories[characterName] || stories['LinZhou'];
+    }
+
+    /**
+     * 创建第一次偶遇的选择按钮
+     */
+    createFirstEncounterChoices(choicesElement, characterName) {
+        const choices = this.getFirstEncounterChoices(characterName);
+        
+        choices.forEach((choice, index) => {
+            const btn = document.createElement('button');
+            btn.className = 'choice-btn';
+            btn.textContent = choice.text;
+            btn.style.marginBottom = '10px';
+            
+            btn.addEventListener('click', () => {
+                this.handleFirstEncounterChoice(characterName, choice);
+            });
+            
+            choicesElement.appendChild(btn);
+        });
+    }
+
+    /**
+     * 获取第一次偶遇的选择选项
+     */
+    getFirstEncounterChoices(characterName) {
+        const choices = {
+            'LinZhou': [
+                { text: '"你在做什么项目？看起来很有趣"', value: 'interested', affection: 3 },
+                { text: '"这么晚还在实验室，真努力呢"', value: 'praise', affection: 2 },
+                { text: '"需要帮助吗？我也懂一些编程"', value: 'helpful', affection: 2 },
+                { text: '"抱歉打扰了，我先走了"', value: 'leave', affection: 0 }
+            ],
+            'SongYunshen': [
+                { text: '"你写的诗很美，可以看看吗？"', value: 'poetry_interest', affection: 3 },
+                { text: '"没想到还有人手写诗歌，真难得"', value: 'appreciation', affection: 2 },
+                { text: '"《诗经》是很好的灵感来源呢"', value: 'literary', affection: 2 },
+                { text: '"图书馆要关门了"', value: 'reminder', affection: 0 }
+            ],
+            'ZhouYichen': [
+                { text: '"抱歉打扰了，你们的讨论很精彩"', value: 'polite', affection: 2 },
+                { text: '"我对学生会活动很感兴趣"', value: 'interested', affection: 3 },
+                { text: '"看起来你们很专业，组织得很好"', value: 'praise', affection: 2 },
+                { text: '"不好意思，我走错了"', value: 'awkward', affection: 1 }
+            ],
+            'TangYan': [
+                { text: '"你的画真的很棒，色彩很有感觉"', value: 'artistic_praise', affection: 3 },
+                { text: '"这是我们学校的春景吗？"', value: 'curious', affection: 2 },
+                { text: '"抱歉打扰了，我只是被画作吸引"', value: 'polite', affection: 1 },
+                { text: '"你经常在这里画画吗？"', value: 'interested', affection: 2 }
+            ],
+            'JiangChe': [
+                { text: '"我有点头痛，可能是熬夜太多了"', value: 'honest', affection: 2 },
+                { text: '"你看起来很专业，是医学院的吗？"', value: 'curious', affection: 2 },
+                { text: '"谢谢你的关心，其实没什么大问题"', value: 'polite', affection: 1 },
+                { text: '"你这么温柔，一定是个好医生"', value: 'compliment', affection: 3 }
+            ]
+        };
+        
+        return choices[characterName] || choices['LinZhou'];
+    }
+
+    /**
+     * 处理第一次偶遇的选择
+     */
+    handleFirstEncounterChoice(characterName, choice) {
+        // 标记角色为已遇见
+        this.gameState.metCharacters.add(characterName);
+        
+        // 增加好感度
+        if (choice.affection > 0) {
+            this.updateCharacterRelationship(characterName, {
+                affection: this.gameState.characterRelationships[characterName].affection + choice.affection
+            });
+        }
+        
+        // 显示结果
+        this.showFirstEncounterResult(characterName, choice);
+    }
+
+    /**
+     * 显示第一次偶遇的结果
+     */
+    showFirstEncounterResult(characterName, choice) {
+        const characterInfo = this.getCharacterIntroInfo(characterName);
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = `初识${characterInfo.name}`;
+                
+                if (descElement) {
+                    const response = this.getEncounterResponse(characterName, choice);
+                    descElement.innerHTML = `
+                        <div style="text-align: left; padding: 20px;">
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                                ${response}
+                            </div>
+                            <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 12px; border-radius: 8px;">
+                                <p style="color: #1976d2; font-weight: 500; margin: 0; font-size: 14px;">
+                                    📝 你与${characterInfo.name}的初次相遇已记录
+                                    ${choice.affection > 0 ? `<br>💝 好感度 +${choice.affection}` : ''}
+                                </p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    
+                    const continueBtn = document.createElement('button');
+                    continueBtn.textContent = '开始校园生活';
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.style.background = '#4caf50';
+                    
+                    continueBtn.addEventListener('click', () => {
+                        this.engine.closeModal('scenario-modal');
+                    });
+                    
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+
+    /**
+     * 获取偶遇回应
+     */
+    getEncounterResponse(characterName, choice) {
+        const responses = {
+            'LinZhou': {
+                'interested': '<p>林舟抬起头，眼中闪过一丝惊喜："这是一个智能推荐系统，不过遇到了算法优化的问题..."他详细地向你解释着项目。</p>',
+                'praise': '<p>林舟不好意思地笑了笑："习惯了，编程的时候容易忘记时间。"</p>',
+                'helpful': '<p>林舟有些意外："真的吗？那太好了，我正好需要有人帮我检查一下逻辑..."</p>',
+                'leave': '<p>林舟点了点头，继续埋头工作，但你似乎错过了什么...</p>'
+            },
+            'SongYunshen': {
+                'poetry_interest': '<p>宋云深的眼中闪过欣喜："你也喜欢诗吗？这是我最近的一些创作..."他小心地将诗稿递给你。</p>',
+                'appreciation': '<p>宋云深温和地笑了："在这个快节奏的时代，我觉得手写更能表达内心的情感。"</p>',
+                'literary': '<p>宋云深眼前一亮："你懂文学！《诗经》确实是中华文学的瑰宝..."</p>',
+                'reminder': '<p>宋云深看了看时间，有些不舍地收起诗稿："谢谢提醒。"</p>'
+            },
+            // 其他角色的回应...
+        };
+        
+        return responses[characterName]?.[choice.value] || '<p>他友好地回应了你。</p>';
     }
 
     /**
@@ -990,19 +1839,155 @@ class GameLogic {
 
         // 检查是否有足够的行动点
         if (this.gameState.actionPoints < course.timeRequired) {
-            alert('行动点不足！');
+            this.engine.showNotification('行动点不足！', 'warning');
             return;
         }
 
-        // 消耗行动点
-        this.gameState.actionPoints -= course.timeRequired;
+        // 存储当前课程信息供后续使用
+        this.currentStudyCourse = course;
+
+        // 不在这里消耗行动点，留给finishActivity统一处理
         
+        // 检查是否需要考试
+        const shouldTakeExam = Math.random() < 0.3; // 30%概率触发考试
+        
+        if (shouldTakeExam && !options.auto) {
+            this.startExam(courseType, course);
+        } else {
+            this.completeStudy(courseType, course, options);
+        }
+    }
+    
+    /**
+     * 开始考试
+     */
+    startExam(courseType, course) {
+        const examQuestions = GameData.academicSystem.examQuestions[courseType];
+        if (!examQuestions || examQuestions.length === 0) {
+            this.completeStudy(courseType, course);
+            return;
+        }
+        
+        const question = examQuestions[Math.floor(Math.random() * examQuestions.length)];
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = `${courseType} - 课堂测验`;
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="padding: 20px;">
+                            <div style="font-size: 40px; text-align: center; margin-bottom: 20px;">📝</div>
+                            <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                                <h4 style="color: #333; margin-bottom: 15px;">课堂测验</h4>
+                                <p style="font-weight: bold; margin-bottom: 15px; line-height: 1.6;">${question.question}</p>
+                                <p style="color: #666; font-size: 14px;">难度: ${question.difficulty}/100</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    question.options.forEach((option, index) => {
+                        const button = document.createElement('button');
+                        button.className = 'choice-btn';
+                        button.textContent = `${String.fromCharCode(65 + index)}. ${option}`;
+                        button.addEventListener('click', () => {
+                            this.handleExamAnswer(index, question.correct, courseType, course);
+                        });
+                        choicesElement.appendChild(button);
+                    });
+                }
+            }
+        });
+    }
+    
+    /**
+     * 处理考试答案
+     */
+    handleExamAnswer(selectedIndex, correctIndex, courseType, course) {
+        const isCorrect = selectedIndex === correctIndex;
+        const baseGain = course.knowledgeGain;
+        const actualGain = isCorrect ? baseGain * 1.5 : baseGain * 0.5; // 答对加成50%，答错减半
+        
+        this.engine.showModal('scenario-modal', {
+            onShow: (modal) => {
+                const titleElement = modal.querySelector('.scenario-title');
+                const descElement = modal.querySelector('.scenario-description');
+                const choicesElement = modal.querySelector('.scenario-choices');
+                
+                if (titleElement) titleElement.textContent = isCorrect ? '答对了！' : '答错了...';
+                
+                if (descElement) {
+                    descElement.innerHTML = `
+                        <div style="text-align: center; padding: 20px;">
+                            <div style="font-size: 60px; margin-bottom: 20px;">${isCorrect ? '🎉' : '😔'}</div>
+                            <div style="background: ${isCorrect ? '#e8f5e8' : '#ffebee'}; padding: 20px; border-radius: 10px;">
+                                <h4 style="color: ${isCorrect ? '#2e7d32' : '#c62828'}; margin-bottom: 15px;">
+                                    ${isCorrect ? '回答正确！' : '回答错误...'}
+                                </h4>
+                                <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                                    ${isCorrect ? '你的理解很准确！' : '没关系，继续努力学习吧！'}
+                                </p>
+                                <p style="color: #666;">知识值 ${isCorrect ? '+' : '+'}${Math.floor(actualGain)}</p>
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                if (choicesElement) {
+                    choicesElement.innerHTML = '';
+                    const continueBtn = document.createElement('button');
+                    continueBtn.className = 'choice-btn';
+                    continueBtn.textContent = '继续学习';
+                    continueBtn.addEventListener('click', () => {
+                        this.completeStudyWithResult(courseType, course, actualGain, isCorrect);
+                    });
+                    choicesElement.appendChild(continueBtn);
+                }
+            }
+        });
+    }
+    
+    /**
+     * 完成学习（带考试结果）
+     */
+    completeStudyWithResult(courseType, course, knowledgeGain, examPassed) {
+        // 增加知识值
+        this.gameState.player.knowledge += knowledgeGain;
+        this.gameState.player.studyProgress += knowledgeGain;
+        
+        // 根据考试结果调整属性增长
+        const statBonus = examPassed ? 1.5 : 1.0;
+        this.applyStatEffects({ 
+            学习: Math.floor(5 * statBonus), 
+            专注: Math.floor(3 * statBonus), 
+            知识: Math.floor(knowledgeGain / 10) 
+        });
+        
+        if (examPassed) {
+            this.gameState.playerStats.自信 = Math.min(100, this.gameState.playerStats.自信 + 3);
+        }
+        
+        this.updateUI();
+        this.showStudyResult(courseType, course, examPassed);
+    }
+    
+    /**
+     * 完成学习（常规）
+     */
+    completeStudy(courseType, course, options = {}) {
         // 增加知识值
         this.gameState.player.knowledge += course.knowledgeGain;
         this.gameState.player.studyProgress += course.knowledgeGain;
         
         // 增加学习相关属性
-        this.updatePlayerStats({ 学习: 5, 专注: 3, 知识: course.knowledgeGain / 10 });
+        this.applyStatEffects({ 学习: 5, 专注: 3, 知识: course.knowledgeGain / 10 });
         
         this.updateUI();
         if (options.auto) {
@@ -1026,7 +2011,7 @@ class GameLogic {
                         btn.textContent = '继续';
                         btn.addEventListener('click', () => {
                             this.engine.closeModal('scenario-modal');
-                            this.finishActivity();
+                            this.finishActivity(course.timeRequired);
                         });
                         choicesElement.appendChild(btn);
                     }
@@ -1040,7 +2025,10 @@ class GameLogic {
     /**
      * 显示学习结果
      */
-    showStudyResult(courseType, course) {
+    /**
+     * 显示学习结果
+     */
+    showStudyResult(courseType, course, examPassed = null) {
         this.engine.showModal('scenario-modal', {
             onShow: (modal) => {
                 const titleElement = modal.querySelector('.scenario-title');
@@ -1052,17 +2040,33 @@ class GameLogic {
                 }
                 
                 if (descElement) {
+                    let examHtml = '';
+                    if (examPassed !== null) {
+                        examHtml = `
+                            <div style="background: ${examPassed ? '#e8f5e8' : '#fff3e0'}; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                                <h4 style="color: ${examPassed ? '#2e7d32' : '#f57c00'}; margin-bottom: 5px;">
+                                    ${examPassed ? '📝 考试通过' : '📝 考试未通过'}
+                                </h4>
+                                <p style="color: #666; margin: 0; font-size: 14px;">
+                                    ${examPassed ? '你的答案准确无误！' : '下次要更仔细地复习哦。'}
+                                </p>
+                            </div>
+                        `;
+                    }
+                    
                     descElement.innerHTML = `
                         <div style="text-align: center; padding: 20px;">
                             <div style="font-size: 48px; margin-bottom: 15px;">📚</div>
                             <h3 style="color: #ff6b9d; margin-bottom: 15px;">完成了${courseType}！</h3>
                             <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
                                 <p style="color: #666; margin-bottom: 15px;">${course.description}</p>
+                                ${examHtml}
                                 <div style="background: #e8f5e8; padding: 15px; border-radius: 8px;">
                                     <h4 style="color: #2e7d32; margin-bottom: 10px;">📈 学习收获</h4>
                                     <p style="color: #4caf50; margin: 5px 0;">知识值 +${course.knowledgeGain}</p>
                                     <p style="color: #4caf50; margin: 5px 0;">学习能力 +5</p>
                                     <p style="color: #4caf50; margin: 5px 0;">专注力 +3</p>
+                                    ${examPassed ? '<p style="color: #4caf50; margin: 5px 0;">自信心 +3</p>' : ''}
                                     <div style="margin-top: 10px; color: #666;">
                                         <small>当前知识值: ${this.gameState.player.knowledge}</small>
                                     </div>
@@ -1079,7 +2083,7 @@ class GameLogic {
                     continueBtn.textContent = '继续';
                     continueBtn.addEventListener('click', () => {
                         this.engine.closeModal('scenario-modal');
-                        this.checkExamRequirement();
+                        this.finishActivity(course.timeRequired); // 确保调用finishActivity来消耗行动点和更新UI
                     });
                     choicesElement.appendChild(continueBtn);
                 }
@@ -1389,7 +2393,7 @@ class GameLogic {
             this.gameState.player.examsPassed.push(this.gameState.player.grade - 1);
             
             // 增加属性
-            this.updatePlayerStats({ 学习: 10, 理性: 5, 自信: 3 });
+            this.applyStatEffects({ 学习: 10, 理性: 5, 自信: 3 });
             
             this.showGradePromotion();
         } else {
