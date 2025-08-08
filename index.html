@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>心动日记｜Love Diary</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- 主菜单界面 -->
+    <div id="main-menu" class="screen active">
+        <div class="title-container">
+            <h1 class="game-title">心动日记</h1>
+            <h2 class="game-subtitle">Love Diary</h2>
+        </div>
+        <div class="menu-buttons">
+            <button onclick="showCharacterCreation()">开始游戏</button>
+            <button onclick="loadGame()">读取存档</button>
+            <button onclick="showSettings()">设置</button>
+        </div>
+    </div>
+
+    <!-- 角色创建界面 -->
+    <div id="character-creation" class="screen">
+        <div class="creation-container">
+            <h2>创建角色</h2>
+            <div class="creation-form">
+                <div class="form-group">
+                    <label>姓名：</label>
+                    <input type="text" id="player-name" placeholder="请输入你的名字" maxlength="10">
+                </div>
+                <div class="form-group">
+                    <label>专业：</label>
+                    <select id="player-major">
+                        <option value="文学">中文系</option>
+                        <option value="心理学">心理学系</option>
+                        <option value="艺术设计">艺术设计系</option>
+                        <option value="外语">外语系</option>
+                        <option value="经济管理">经济管理系</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>性格：</label>
+                    <div class="personality-options">
+                        <label><input type="radio" name="personality" value="开朗"> 开朗</label>
+                        <label><input type="radio" name="personality" value="内向"> 内向</label>
+                        <label><input type="radio" name="personality" value="理性"> 理性</label>
+                        <label><input type="radio" name="personality" value="感性"> 感性</label>
+                    </div>
+                </div>
+                <button onclick="startGame()">确认创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 游戏主界面 -->
+    <div id="game-main" class="screen">
+        <!-- 日历系统 -->
+        <div id="calendar-container">
+            <div class="week-info">
+                <span id="current-week">第1周</span>
+                <span id="action-points">行动点数: <span id="current-actions">2</span>/2</span>
+            </div>
+            <div class="calendar">
+                <div class="day-slot" data-day="1">
+                    <span>星期一</span>
+                    <div class="day-activities"></div>
+                </div>
+                <div class="day-slot" data-day="2">
+                    <span>星期二</span>
+                    <div class="day-activities"></div>
+                </div>
+                <div class="day-slot" data-day="3">
+                    <span>星期三</span>
+                    <div class="day-activities"></div>
+                </div>
+                <div class="day-slot" data-day="4">
+                    <span>星期四</span>
+                    <div class="day-activities"></div>
+                </div>
+                <div class="day-slot" data-day="5">
+                    <span>星期五</span>
+                    <div class="day-activities"></div>
+                </div>
+                <div class="day-slot" data-day="6">
+                    <span>星期六</span>
+                    <div class="day-activities"></div>
+                </div>
+                <div class="day-slot" data-day="7">
+                    <span>星期日</span>
+                    <div class="day-activities"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 角色状态栏 -->
+        <div id="status-bar">
+            <div class="player-info">
+                <span id="player-display-name">小雨</span> | <span id="player-display-major">中文系</span>
+            </div>
+            <div class="affection-meters">
+                <div class="affection-item">
+                    <span>顾言</span>
+                    <div class="meter">
+                        <div class="meter-fill" id="guyan-meter" style="width: 0%"></div>
+                    </div>
+                    <span id="guyan-value">0</span>
+                </div>
+                <div class="affection-item">
+                    <span>林舟</span>
+                    <div class="meter">
+                        <div class="meter-fill" id="linzhou-meter" style="width: 0%"></div>
+                    </div>
+                    <span id="linzhou-value">0</span>
+                </div>
+                <div class="affection-item">
+                    <span>宋之南</span>
+                    <div class="meter">
+                        <div class="meter-fill" id="songzhinan-meter" style="width: 0%"></div>
+                    </div>
+                    <span id="songzhinan-value">0</span>
+                </div>
+                <div class="affection-item">
+                    <span>周奕辰</span>
+                    <div class="meter">
+                        <div class="meter-fill" id="zhouyichen-meter" style="width: 0%"></div>
+                    </div>
+                    <span id="zhouyichen-value">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 活动选择面板 -->
+        <div id="activity-panel" class="hidden">
+            <h3>选择今天的活动</h3>
+            <div class="activity-buttons">
+                <button onclick="selectActivity('学习')">📚 学习</button>
+                <button onclick="selectActivity('社交')">👥 社交</button>
+                <button onclick="selectActivity('休闲')">🎮 休闲</button>
+                <button onclick="selectActivity('偶遇')">💕 偶遇</button>
+            </div>
+            <button onclick="closeActivityPanel()">取消</button>
+        </div>
+
+        <!-- 对话系统 -->
+        <div id="dialogue-system" class="hidden">
+            <div class="dialogue-background">
+                <div class="character-portrait">
+                    <img id="character-image" src="" alt="角色立绘">
+                </div>
+                <div class="dialogue-box">
+                    <div class="speaker-name" id="speaker-name"></div>
+                    <div class="dialogue-text" id="dialogue-text"></div>
+                    <div class="dialogue-choices" id="dialogue-choices"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏控制按钮 -->
+        <div class="game-controls">
+            <button onclick="nextWeek()">下一周</button>
+            <button onclick="saveGame()">保存</button>
+            <button onclick="showMainMenu()">主菜单</button>
+        </div>
+    </div>
+
+    <!-- 结局界面 -->
+    <div id="ending-screen" class="screen">
+        <div class="ending-container">
+            <h2 id="ending-title"></h2>
+            <div id="ending-content"></div>
+            <div id="ending-image"></div>
+            <button onclick="showMainMenu()">返回主菜单</button>
+        </div>
+    </div>
+
+    <script src="game-data.js"></script>
+    <script src="game-engine.js"></script>
+</body>
+</html>
