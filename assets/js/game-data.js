@@ -5,49 +5,49 @@ const gameData = {
             name: "顾言",
             title: "冷酷学长",
             description: "计算机系研究生，外表冷酷但内心温柔",
-            portrait: "avatar-guyan.svg"
+            portrait: "GuYan.png"
         },
         林舟: {
             name: "林舟",
             title: "青梅竹马",
             description: "从小一起长大的邻家男孩，现在是体育系学生",
-            portrait: "avatar-linzhou.svg"
+            portrait: "LinZhou.png"
         },
         宋之南: {
             name: "宋之南",
             title: "神秘钢琴老师",
             description: "音乐学院的年轻钢琴老师，气质优雅神秘",
-            portrait: "avatar-songzhinan.svg"
+            portrait: "SongZhinan.png"
         },
         周奕辰: {
             name: "周奕辰",
             title: "阳光学弟",
             description: "大一新生，性格开朗活泼，总是充满活力",
-            portrait: "avatar-zhouyichen.svg"
+            portrait: "ZhouYichen.png"
         },
         江澈: {
             name: "江澈",
             title: "文艺社长",
             description: "文学社社长，温文尔雅的诗人气质，总是在图书馆写作",
-            portrait: "avatar-jiangche.svg"
+            portrait: "JiangChe.png"
         },
         苏云深: {
             name: "苏云深",
             title: "医学天才",
             description: "医学院的天才学生，成熟稳重，有着治愈系的温柔",
-            portrait: "avatar-suyunshen.svg"
+            portrait: "SongYunshen.png"
         },
         唐言: {
             name: "唐言",
             title: "霸道总裁",
             description: "商学院学生会主席，家境优渥，外表强势内心柔软",
-            portrait: "avatar-tangyan.svg"
+            portrait: "TangYan.png"
         },
         萧然: {
             name: "萧然",
             title: "神秘画家",
             description: "美术系的才华横溢的画家，性格孤僻但内心热情",
-            portrait: "avatar-xiaoran.svg"
+            portrait: "XiaoRan.png"
         }
     },
 
