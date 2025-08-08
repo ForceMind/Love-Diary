@@ -492,28 +492,22 @@ class LoveDiaryGame {
         if (descElement) {
             descElement.innerHTML = `
                 <div style="text-align: center;">
-                    <div style="font-size: 60px; margin-bottom: 20px;">🌸</div>
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h4 style="color: #ff6b9d; margin-bottom: 15px;">欢迎来到心动日记！</h4>
-                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                    <div style="font-size: 50px; margin-bottom: 15px;">🌸</div>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                        <h4 style="color: #ff6b9d; margin-bottom: 10px;">欢迎来到心动日记！</h4>
+                        <p style="line-height: 1.5; color: #555; margin-bottom: 10px; font-size: 14px;">
                             你是 <strong>${this.gameState.player.name}</strong>，一名${this.gameState.player.major}专业的大学生。
                             性格${this.gameState.player.personality}的你，即将开始一段充满可能性的校园恋爱故事。
                         </p>
-                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
-                            <p style="color: #1976d2; font-weight: 500; margin: 0;">
-                                💡 游戏玩法提示：<br>
-                                • 现在是大一，每周有2个行动点数<br>
-                                • 每20周升一年级，行动点数会增加<br>
-                                • 大二3点、大三5点、大四7点<br>
-                                • 点击不同日期进行各种活动<br>
-                                • 通过互动提升与角色的好感度<br>
-                                • 你的选择将影响故事的发展
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+                            <p style="color: #1976d2; font-weight: 500; margin: 0; font-size: 13px; line-height: 1.4;">
+                                💡 游戏玩法：现在是大一，每周2个行动点数<br>
+                                每20周升一年级，行动点数会增加<br>
+                                点击日期进行活动，与角色互动提升好感度
                             </p>
                         </div>
-                        <p style="line-height: 1.6; color: #555;">
-                            在这所美丽的大学里，你将会遇到各种各样有趣的人物：
-                            学霸顾言、阳光林舟、优雅宋之南、可爱周奕辰、才华江澈、
-                            温柔苏云深、强势唐言，还有神秘的萧然...
+                        <p style="line-height: 1.4; color: #555; font-size: 13px;">
+                            你将遇到：学霸顾言、阳光林舟、优雅宋之南、可爱周奕辰、才华江澈、温柔苏云深、强势唐言，还有神秘的萧然...
                         </p>
                     </div>
                 </div>
@@ -533,22 +527,24 @@ class LoveDiaryGame {
             startBtn.style.cssText = `
                 background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%) !important;
                 color: white !important;
-                padding: 15px 25px !important;
-                border-radius: 25px !important;
-                border: none !important;
-                font-size: 16px !important;
-                font-weight: 600 !important;
+                padding: 18px 30px !important;
+                border-radius: 30px !important;
+                border: 3px solid #ff8fab !important;
+                font-size: 18px !important;
+                font-weight: 700 !important;
                 cursor: pointer !important;
                 width: 100% !important;
                 display: block !important;
                 visibility: visible !important;
                 opacity: 1 !important;
-                margin: 10px 0 !important;
+                margin: 20px 0 10px 0 !important;
                 text-align: center !important;
-                box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3) !important;
+                box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4) !important;
                 position: relative !important;
-                z-index: 10 !important;
+                z-index: 100 !important;
                 overflow: visible !important;
+                min-height: 50px !important;
+                line-height: 1.2 !important;
             `;
             startBtn.addEventListener('click', () => {
                 console.log('开始游戏按钮被点击');
