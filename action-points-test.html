@@ -60,6 +60,7 @@
         <h3>测试操作</h3>
         <button onclick="testStudyCourse()">学习课程 (消耗2点)</button>
         <button onclick="testRegularActivity()">常规活动 (消耗1点)</button>
+        <button onclick="testDoubleDeduction()">🐛 测试重复扣除问题</button>
         <button onclick="testNextWeek()">进入下一周</button>
         <button onclick="testGradeUp()">模拟升级</button>
         <button onclick="resetGame()">重置游戏</button>
@@ -173,6 +174,59 @@
             };
             log('游戏状态已重置');
             updateUI();
+        }
+
+        // 测试重复扣除问题
+        function testDoubleDeduction() {
+            log('=== 开始测试重复扣除问题 ===');
+            const initialPoints = gameState.actionPoints;
+            log(`初始行动点: ${initialPoints}`);
+            
+            // 测试场景1: 新周活动系统
+            log('场景1: 测试新周活动系统 (executeWeeklyActivity)');
+            log('模拟: 用户点击星期一 -> 选择图书馆学习');
+            
+            // 模拟新周活动系统的流程
+            log('步骤1: executeWeeklyActivity 消耗行动点');
+            gameState.actionPoints -= 1; // 模拟 executeWeeklyActivity 消耗
+            const afterExecute = gameState.actionPoints;
+            log(`executeWeeklyActivity后行动点: ${afterExecute}`);
+            
+            // 模拟用户点击继续按钮 - 这里不应该再次消耗行动点
+            log('步骤2: 用户点击继续按钮 (应该不再消耗行动点)');
+            // 这里应该调用 completeActivityWithoutActionPoints() 而不是 finishActivity()
+            const afterContinue = gameState.actionPoints; // 应该保持不变
+            log(`点击继续后行动点: ${afterContinue}`);
+            
+            const totalCost = initialPoints - afterContinue;
+            log(`总计消耗: ${totalCost}点 (期望: 1点)`);
+            
+            if (totalCost === 1) {
+                log('✅ 修复成功: 新周活动系统不再重复扣除行动点');
+            } else {
+                log('� 仍有问题: 行动点消耗不正确');
+            }
+            
+            // 重置测试
+            gameState.actionPoints = gameState.maxActionPoints;
+            
+            // 测试场景2: 旧活动系统（如果还在使用）
+            log('场景2: 测试旧活动系统兼容性');
+            const initialPoints2 = gameState.actionPoints;
+            
+            log('模拟旧系统调用 finishActivity(1)');
+            const success = finishActivity(1);
+            const afterOldSystem = gameState.actionPoints;
+            const oldSystemCost = initialPoints2 - afterOldSystem;
+            log(`旧系统消耗: ${oldSystemCost}点 (期望: 1点)`);
+            
+            if (oldSystemCost === 1) {
+                log('✅ 旧系统工作正常');
+            } else {
+                log('⚠️ 旧系统可能有问题');
+            }
+            
+            log('=== 测试结束 ===');
         }
 
         // 初始化

@@ -9,7 +9,8 @@ class GameLogic {
         this.selectedDay = null;
         this.currentStory = null;
         this.storyManager = null; // 稍后设置
-    this.ui = null; // UI 管理器
+        this.ui = null; // UI 管理器
+        this.currentActivityInProgress = null; // 当前进行的活动
     }
 
     /**
@@ -93,6 +94,21 @@ class GameLogic {
             };
         });
 
+        // 为新系统添加英文名角色
+        const newSystemCharacters = ['LinZhou', 'SongYunshen', 'ZhouYichen', 'TangYan', 'JiangChe'];
+        newSystemCharacters.forEach(characterName => {
+            if (!this.gameState.characterRelationships[characterName]) {
+                this.gameState.characterRelationships[characterName] = {
+                    affection: 0,      // 好感度
+                    trust: 0,          // 信任度
+                    impression: 0,     // 印象分
+                    intimacy: 0,       // 亲密度
+                    events: [],        // 互动事件记录
+                    specialEvents: []  // 特殊事件记录
+                };
+            }
+        });
+
         // 初始化认识状态
         this.gameState.characterMeetStatus = {};
         characters.forEach(characterName => {
@@ -107,6 +123,23 @@ class GameLogic {
                     background_exploration: { unlocked: [], completed: [] }
                 }
             };
+        });
+
+        // 为新系统角色添加认识状态
+        newSystemCharacters.forEach(characterName => {
+            if (!this.gameState.characterMeetStatus[characterName]) {
+                this.gameState.characterMeetStatus[characterName] = {
+                    met: false,           // 是否认识
+                    meetWeek: 0,         // 认识的周数
+                    intimacyLevel: 0,    // 亲密等级
+                    lastInteraction: 0,   // 最后互动周数
+                    storyProgress: {      // 故事进度追踪
+                        first_meeting: { completed: false, currentRound: 0 },
+                        interaction: { completed: false, currentRound: 0, totalRounds: 0 },
+                        background_exploration: { unlocked: [], completed: [] }
+                    }
+                };
+            }
         });
     }
 
@@ -205,8 +238,16 @@ class GameLogic {
         console.log(`=== 更新角色关系: ${characterName} ===`);
         
         if (!this.gameState.characterRelationships[characterName]) {
-            console.warn(`角色 ${characterName} 的关系数据不存在，将初始化`);
-            this.initializeCharacterRelationships();
+            console.warn(`角色 ${characterName} 的关系数据不存在，将创建新的关系数据`);
+            // 为单个角色创建关系数据
+            this.gameState.characterRelationships[characterName] = {
+                affection: 0,      // 好感度
+                trust: 0,          // 信任度
+                impression: 0,     // 印象分
+                intimacy: 0,       // 亲密度
+                events: [],        // 互动事件记录
+                specialEvents: []  // 特殊事件记录
+            };
         }
         
         const relationship = this.gameState.characterRelationships[characterName];
@@ -246,9 +287,10 @@ class GameLogic {
     // 自动执行活动
     autoExecuteDayActivity(day) {
         // 使用新的每周活动系统
-        const dayOfWeek = (day - 1) % 7; // 转换为星期 (0=星期日, 1=星期一...)
-        const dayTheme = WeeklyActivityData.getDayTheme(dayOfWeek);
-        const dayActivities = WeeklyActivityData.getDayActivities(dayOfWeek);
+        const dayOfWeek = ((day - 1) % 7) + 1; // 转换为星期 (1=星期一, 2=星期二...7=星期日)
+        const normalizedDay = dayOfWeek === 7 ? 0 : dayOfWeek; // 将星期日转换为0以匹配WeeklyActivityData
+        const dayTheme = WeeklyActivityData.getDayTheme(normalizedDay);
+        const dayActivities = WeeklyActivityData.getDayActivities(normalizedDay);
         
         // 根据已遇见角色过滤偶遇机会
         const filteredActivities = WeeklyActivityData.filterEncountersByMet(dayActivities, this.gameState.metCharacters);
@@ -418,6 +460,9 @@ class GameLogic {
      * 显示活动结果
      */
     showActivityResult(activity, dayTheme, encounteredCharacter) {
+        // 保存当前活动信息，供互动时使用
+        this.currentActivityInProgress = activity;
+        
         this.engine.showModal('scenario-modal', {
             onShow: (modal) => {
                 const titleElement = modal.querySelector('.scenario-title');
@@ -490,19 +535,33 @@ class GameLogic {
                         });
                         
                         choicesElement.appendChild(interactBtn);
+                        
+                        // 如果遇到角色，也提供跳过互动的选项
+                        const skipBtn = document.createElement('button');
+                        skipBtn.textContent = '跳过互动';
+                        skipBtn.className = 'choice-btn';
+                        skipBtn.style.background = '#9e9e9e';
+                        
+                        skipBtn.addEventListener('click', () => {
+                            this.engine.closeModal('scenario-modal');
+                            this.completeActivityWithoutActionPoints(); // 不再消耗行动点，只更新UI
+                        });
+                        
+                        choicesElement.appendChild(skipBtn);
+                    } else {
+                        // 没有遇到角色，显示普通的继续按钮
+                        const continueBtn = document.createElement('button');
+                        continueBtn.textContent = '继续';
+                        continueBtn.className = 'choice-btn';
+                        continueBtn.style.background = '#4caf50';
+                        
+                        continueBtn.addEventListener('click', () => {
+                            this.engine.closeModal('scenario-modal');
+                            this.completeActivityWithoutActionPoints(); // 不再消耗行动点，只更新UI
+                        });
+                        
+                        choicesElement.appendChild(continueBtn);
                     }
-                    
-                    const continueBtn = document.createElement('button');
-                    continueBtn.textContent = '继续';
-                    continueBtn.className = 'choice-btn';
-                    continueBtn.style.background = '#4caf50';
-                    
-                    continueBtn.addEventListener('click', () => {
-                        this.engine.closeModal('scenario-modal');
-                        this.finishActivity(activity.timeRequired);
-                    });
-                    
-                    choicesElement.appendChild(continueBtn);
                 }
             }
         });
@@ -512,64 +571,32 @@ class GameLogic {
      * 开始角色互动
      */
     startCharacterInteraction(characterName) {
-        // 这里可以调用现有的角色互动系统
-        // 暂时简单处理
-        const characterInfo = this.getCharacterIntroInfo(characterName);
+        // 确保StoryManager存在
+        if (!this.storyManager) {
+            console.warn('StoryManager 未初始化，创建临时实例');
+            this.storyManager = new StoryManager(this);
+        }
+
+        // 确保角色关系数据存在
+        if (!this.gameState.characterRelationships[characterName]) {
+            this.updateCharacterRelationship(characterName, {});
+        }
+
+        const relationship = this.gameState.characterRelationships[characterName];
         
-        this.engine.showModal('scenario-modal', {
-            onShow: (modal) => {
-                const titleElement = modal.querySelector('.scenario-title');
-                const descElement = modal.querySelector('.scenario-description');
-                const choicesElement = modal.querySelector('.scenario-choices');
-                
-                if (titleElement) {
-                    titleElement.textContent = `与${characterInfo.name}的互动`;
-                }
-                
-                if (descElement) {
-                    descElement.innerHTML = `
-                        <div style="text-align: center; padding: 20px;">
-                            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px;">
-                                <p style="line-height: 1.6; color: #555;">
-                                    你遇到了${characterInfo.name}，可以选择如何与他互动...
-                                </p>
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                if (choicesElement) {
-                    choicesElement.innerHTML = '';
-                    
-                    const choices = [
-                        { text: '主动打招呼', affection: 2 },
-                        { text: '微笑点头', affection: 1 },
-                        { text: '观察一下再说', affection: 1 },
-                        { text: '暂时不打扰', affection: 0 }
-                    ];
-                    
-                    choices.forEach(choice => {
-                        const btn = document.createElement('button');
-                        btn.textContent = choice.text;
-                        btn.className = 'choice-btn';
-                        btn.style.marginBottom = '8px';
-                        
-                        btn.addEventListener('click', () => {
-                            if (choice.affection > 0) {
-                                this.updateCharacterRelationship(characterName, {
-                                    affection: this.gameState.characterRelationships[characterName].affection + choice.affection
-                                });
-                            }
-                            
-                            this.engine.closeModal('scenario-modal');
-                            this.finishActivity(0); // 互动不额外消耗行动点
-                        });
-                        
-                        choicesElement.appendChild(btn);
-                    });
-                }
-            }
-        });
+        // 判断是否是第一次遇见
+        const isFirstMeeting = !this.gameState.metCharacters.has(characterName);
+        
+        if (isFirstMeeting) {
+            // 第一次遇见，标记为已遇见
+            this.gameState.metCharacters.add(characterName);
+            // 使用第一次见面的故事类型
+            this.storyManager.startStory(characterName, 'encounter', 'first_meeting', 1);
+        } else {
+            // 非第一次遇见，使用普通互动故事
+            const round = this.getNextInteractionRound(characterName);
+            this.storyManager.startStory(characterName, 'encounter', 'interaction', round);
+        }
     }
 
     /**
@@ -870,6 +897,12 @@ class GameLogic {
      */
     getNextInteractionRound(characterName) {
         const storyProgress = this.gameState.characterMeetStatus[characterName].storyProgress;
+        
+        // 确保角色关系数据存在
+        if (!this.gameState.characterRelationships[characterName]) {
+            this.updateCharacterRelationship(characterName, {});
+        }
+        
         const relationship = this.gameState.characterRelationships[characterName];
         
         // 根据关系深度决定互动类型
@@ -890,6 +923,12 @@ class GameLogic {
      */
     showSimpleInteraction(characterName, activityId) {
         const character = GameData.characters[characterName];
+        
+        // 确保角色关系数据存在
+        if (!this.gameState.characterRelationships[characterName]) {
+            this.updateCharacterRelationship(characterName, {});
+        }
+        
         const relationship = this.gameState.characterRelationships[characterName];
         
         this.engine.showModal('scenario-modal', {
@@ -987,6 +1026,22 @@ class GameLogic {
         // 消耗行动点
         this.gameState.actionPoints = Math.max(0, this.gameState.actionPoints - actionPointCost);
         
+        // 更新周统计
+        this.updateWeekStats();
+        this.updateUI();
+        
+        // 检查是否需要进入下一周
+        if (this.gameState.actionPoints <= 0) {
+            setTimeout(() => {
+                this.askForNextWeek();
+            }, 1500);
+        }
+    }
+
+    /**
+     * 完成活动（不消耗行动点，用于新周活动系统）
+     */
+    completeActivityWithoutActionPoints() {
         // 更新周统计
         this.updateWeekStats();
         this.updateUI();
@@ -1456,8 +1511,13 @@ class GameLogic {
         
         // 增加好感度
         if (choice.affection > 0) {
+            // 确保角色关系数据存在
+            if (!this.gameState.characterRelationships[characterName]) {
+                this.initializeCharacterRelationships();
+            }
+            
             this.updateCharacterRelationship(characterName, {
-                affection: this.gameState.characterRelationships[characterName].affection + choice.affection
+                affection: choice.affection
             });
         }
         
@@ -1645,6 +1705,11 @@ class GameLogic {
         const ending = GameData.endings[endingKey];
         if (!ending) return false;
 
+        // 确保角色关系数据存在
+        if (!this.gameState.characterRelationships[characterName]) {
+            this.updateCharacterRelationship(characterName, {});
+        }
+
         const relationship = this.gameState.characterRelationships[characterName];
         const conditions = ending.conditions;
 
@@ -1705,6 +1770,11 @@ class GameLogic {
         const endingKey = `${characterName}_True_End`;
         const ending = GameData.endings[endingKey];
         if (!ending) return null;
+
+        // 确保角色关系数据存在
+        if (!this.gameState.characterRelationships[characterName]) {
+            this.updateCharacterRelationship(characterName, {});
+        }
 
         const relationship = this.gameState.characterRelationships[characterName];
         const conditions = ending.conditions;

@@ -57,14 +57,17 @@ class StoryManager {
      */
     getStoryContent(characterName, activityId, storyType, round) {
         try {
+            // 处理角色名称映射（英文名 -> 中文名）
+            const chineseName = GameData.characterNameMapping[characterName] || characterName;
+            
             // 从GameData中获取故事数据
             const storyData = GameData.storyData[storyType];
-            if (!storyData || !storyData[characterName] || !storyData[characterName][round]) {
-                console.warn(`故事内容缺失: ${characterName} - ${storyType} - 第${round}轮`);
-                return this.generateFallbackContent(characterName, activityId, storyType, round);
+            if (!storyData || !storyData[chineseName] || !storyData[chineseName][round]) {
+                console.warn(`故事内容缺失: ${characterName} (${chineseName}) - ${storyType} - 第${round}轮`);
+                return this.generateFallbackContent(chineseName, activityId, storyType, round);
             }
 
-            const content = storyData[characterName][round];
+            const content = storyData[chineseName][round];
             
             // 动态替换玩家信息
             return this.processStoryContent(content);
@@ -143,7 +146,9 @@ class StoryManager {
      */
     displayStoryModal(storyContent, round) {
         const characterName = this.currentStory.characterName;
-        const character = GameData.characters[characterName];
+        // 处理角色名称映射（英文名 -> 中文名）
+        const chineseName = GameData.characterNameMapping[characterName] || characterName;
+        const character = GameData.characters[chineseName];
         
         this.engine.showModal('scenario-modal', {
             onShow: (modal) => {
@@ -153,9 +158,10 @@ class StoryManager {
                 
                 // 设置标题
                 if (titleElement) {
+                    const displayName = character ? character.name : chineseName;
                     const titleText = this.currentStory.storyType === 'first_meeting' 
-                        ? `初次相遇 - ${characterName}` 
-                        : `与${characterName}的互动`;
+                        ? `初次相遇 - ${displayName}` 
+                        : `与${displayName}的互动`;
                     titleElement.textContent = titleText;
                 }
                 
@@ -410,7 +416,7 @@ class StoryManager {
                     continueBtn.textContent = '继续游戏';
                     continueBtn.addEventListener('click', () => {
                         this.engine.closeModal('scenario-modal');
-                        this.gameLogic.finishActivity();
+                        this.gameLogic.completeActivityWithoutActionPoints();
                     });
                     
                     choicesElement.appendChild(continueBtn);
@@ -424,17 +430,21 @@ class StoryManager {
      */
     generateResultHTML(characterName, relationship, meetStatus, isFirstMeeting) {
         const activityName = this.getActivityName(this.currentStory.activityId);
+        // 获取中文显示名称
+        const chineseName = GameData.characterNameMapping[characterName] || characterName;
+        const character = GameData.characters[chineseName];
+        const displayName = character ? character.name : chineseName;
         
         return `
             <div style="text-align: center;">
                 <div style="font-size: 40px; margin-bottom: 15px;">${isFirstMeeting ? '💫' : '✨'}</div>
                 <div style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
                     <h4 style="color: #ff6b9d; margin-bottom: 15px;">
-                        ${isFirstMeeting ? `认识了${characterName}！` : `与${characterName}度过了愉快的时光`}
+                        ${isFirstMeeting ? `认识了${displayName}！` : `与${displayName}度过了愉快的时光`}
                     </h4>
                     <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
                         ${isFirstMeeting ? 
-                            `通过这次${activityName}，你认识了${characterName}。他给你留下了很好的印象。` :
+                            `通过这次${activityName}，你认识了${displayName}。他给你留下了很好的印象。` :
                             `你们的关系在这次${activityName}中得到了进一步发展。`
                         }
                     </p>
