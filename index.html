@@ -37,6 +37,101 @@
                 <button onclick="showAchievements()">成就系统</button>
                 <button onclick="showGallery()">回忆相册</button>
                 <button onclick="showSettings()">设置</button>
+                <!-- 快速测试按钮已隐藏，如需测试请使用 test.html -->
+            </div>
+        </div>
+        
+        <!-- 游戏主界面 -->
+        <div id="game-screen" class="screen">
+            <div class="game-header">
+                <div class="game-title-bar">
+                    <h2>心动日记 - 游戏进行中</h2>
+                </div>
+                
+                <!-- 玩家信息栏 -->
+                <div class="player-info-bar">
+                    <div class="player-info-left">
+                        <div id="player-info">角色信息</div>
+                    </div>
+                    <div class="player-info-right">
+                        <div class="game-stats">
+                            <span id="current-week">第1周</span>
+                            <span>行动点数: <span id="current-actions">2</span>/2</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="game-content">
+                <!-- 日历系统 -->
+                <div class="calendar-container">
+                    <h3 style="text-align: center; color: #ff6b9d; margin-bottom: 20px;">📅 选择一天进行活动</h3>
+                    <div class="calendar-grid">
+                        <div class="day-slot" onclick="selectDay(1)" style="cursor: pointer;" title="点击进行星期一活动">
+                            <div class="day-name">星期一</div>
+                            <div class="day-icon">📚</div>
+                            <div class="day-activity">学习</div>
+                        </div>
+                        <div class="day-slot" onclick="selectDay(2)" style="cursor: pointer;" title="点击进行星期二活动">
+                            <div class="day-name">星期二</div>
+                            <div class="day-icon">🎨</div>
+                            <div class="day-activity">社交</div>
+                        </div>
+                        <div class="day-slot" onclick="selectDay(3)" style="cursor: pointer;" title="点击进行星期三活动">
+                            <div class="day-name">星期三</div>
+                            <div class="day-icon">🎵</div>
+                            <div class="day-activity">休闲</div>
+                        </div>
+                        <div class="day-slot" onclick="selectDay(4)" style="cursor: pointer;" title="点击进行星期四活动">
+                            <div class="day-name">星期四</div>
+                            <div class="day-icon">⚽</div>
+                            <div class="day-activity">社交</div>
+                        </div>
+                        <div class="day-slot" onclick="selectDay(5)" style="cursor: pointer;" title="点击进行星期五活动">
+                            <div class="day-name">星期五</div>
+                            <div class="day-icon">📖</div>
+                            <div class="day-activity">学习</div>
+                        </div>
+                        <div class="day-slot" onclick="selectDay(6)" style="cursor: pointer;" title="点击进行星期六活动">
+                            <div class="day-name">星期六</div>
+                            <div class="day-icon">🌸</div>
+                            <div class="day-activity">休闲</div>
+                        </div>
+                        <div class="day-slot" onclick="selectDay(7)" style="cursor: pointer;" title="点击进行星期日活动">
+                            <div class="day-name">星期日</div>
+                            <div class="day-icon">☕</div>
+                            <div class="day-activity">偶遇</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 游戏状态信息 -->
+                <div class="game-status">
+                    <div class="status-card">
+                        <h4>📊 本周统计</h4>
+                        <div id="week-stats">
+                            <div>学习次数: <span id="study-count">0</span></div>
+                            <div>社交次数: <span id="social-count">0</span></div>
+                            <div>休闲次数: <span id="leisure-count">0</span></div>
+                            <div>偶遇次数: <span id="encounter-count">0</span></div>
+                        </div>
+                    </div>
+                    
+                    <div class="status-card">
+                        <h4>💕 角色好感度</h4>
+                        <div id="affection-stats">
+                            <!-- 动态生成好感度信息 -->
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 游戏控制按钮 -->
+                <div class="game-controls">
+                    <button onclick="saveGame()" class="btn-save">💾 保存游戏</button>
+                    <button onclick="showModal('settings-modal')" class="btn-settings">⚙️ 游戏设置</button>
+                    <button onclick="returnToMenu()" class="btn-menu">🏠 返回主菜单</button>
+                    <button onclick="nextWeek()" class="btn-next" id="next-week-btn" style="display: none;">⏭️ 下一周</button>
+                </div>
             </div>
         </div>
     </div>
@@ -72,65 +167,6 @@
                         </div>
                     </div>
                     <button onclick="startGameFromCreation()">确认创建</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- 游戏时间线弹窗 -->
-    <div id="game-timeline-modal" class="modal">
-        <div class="modal-content" style="max-width: 900px;">
-            <span class="modal-close" onclick="closeModal('game-timeline-modal')">&times;</span>
-            <div class="game-container">
-                <!-- 玩家信息栏 -->
-                <div class="player-info-bar">
-                    <div id="player-info">角色信息</div>
-                    <div class="game-stats">
-                        <span id="current-week">第1周</span>
-                        <span>行动点数: <span id="current-actions">2</span>/2</span>
-                    </div>
-                </div>
-                
-                <!-- 日历系统 -->
-                <div class="calendar-container">
-                    <h3 style="text-align: center; color: #ff6b9d; margin-bottom: 20px;">📅 选择一天进行活动</h3>
-                    <div class="calendar-grid">
-                        <div class="day-slot" onclick="selectDay(1)">
-                            <div class="day-name">星期一</div>
-                            <div class="day-icon">📚</div>
-                        </div>
-                        <div class="day-slot" onclick="selectDay(2)">
-                            <div class="day-name">星期二</div>
-                            <div class="day-icon">🎨</div>
-                        </div>
-                        <div class="day-slot" onclick="selectDay(3)">
-                            <div class="day-name">星期三</div>
-                            <div class="day-icon">🎵</div>
-                        </div>
-                        <div class="day-slot" onclick="selectDay(4)">
-                            <div class="day-name">星期四</div>
-                            <div class="day-icon">⚽</div>
-                        </div>
-                        <div class="day-slot" onclick="selectDay(5)">
-                            <div class="day-name">星期五</div>
-                            <div class="day-icon">📖</div>
-                        </div>
-                        <div class="day-slot" onclick="selectDay(6)">
-                            <div class="day-name">星期六</div>
-                            <div class="day-icon">🌸</div>
-                        </div>
-                        <div class="day-slot" onclick="selectDay(7)">
-                            <div class="day-name">星期日</div>
-                            <div class="day-icon">☕</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 游戏控制按钮 -->
-                <div class="game-controls">
-                    <button onclick="saveGame()">💾 保存游戏</button>
-                    <button onclick="showModal('settings-modal')">⚙️ 游戏设置</button>
-                    <button onclick="closeGameAndReturnToMenu()">🏠 返回主菜单</button>
                 </div>
             </div>
         </div>
@@ -244,5 +280,53 @@
     <script src="assets/js/expanded-game-data.js"></script>
     <script src="assets/js/enhanced-game-data.js"></script>
     <script src="assets/js/game-engine.js"></script>
+    
+    <!-- 调试脚本 -->
+    <script>
+        // 添加全局调试函数
+        window.debugSelectDay = function(day) {
+            console.log('调试：点击日期', day);
+            console.log('game对象:', window.game);
+            console.log('typeof game:', typeof window.game);
+            
+            if (!window.game) {
+                alert('游戏未初始化！请等待页面完全加载。');
+                return;
+            }
+            
+            selectDay(day);
+        };
+        
+        // 快速测试函数
+        window.testDirectGame = function() {
+            if (!window.game) {
+                alert('游戏未初始化！请刷新页面重试。');
+                return;
+            }
+            
+            console.log('开始快速测试...');
+            
+            // 创建测试角色
+            const testPlayer = {
+                name: "测试玩家",
+                major: "计算机科学",
+                personality: "开朗"
+            };
+            
+            // 直接启动游戏
+            window.game.startGame(testPlayer);
+            
+            alert('测试模式启动！现在可以点击日期了。日期将直接在新界面中显示。');
+        };
+        
+        // 页面加载完成后的调试
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                console.log('页面加载完成，游戏状态检查:');
+                console.log('window.game:', window.game);
+                console.log('gameData:', typeof gameData !== 'undefined' ? 'OK' : 'MISSING');
+            }, 1000);
+        });
+    </script>
 </body>
 </html>

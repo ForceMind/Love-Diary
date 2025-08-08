@@ -30,7 +30,7 @@ const gameData = {
             trust: 0,
             personality: ["优雅", "神秘", "才华横溢", "完美主义"],
             hobbies: ["钢琴", "古典音乐", "品茶"],
-            portrait: "SongZhiNan.png"
+            portrait: "SongZhinan.png"
         },
         周奕辰: {
             name: "周奕辰",
@@ -40,7 +40,7 @@ const gameData = {
             trust: 0,
             personality: ["天真", "热情", "好奇", "单纯"],
             hobbies: ["摄影", "旅行", "尝试新事物"],
-            portrait: "ZhouYiChen.png"
+            portrait: "ZhouYichen.png"
         },
         江澈: {
             name: "江澈",
@@ -60,7 +60,7 @@ const gameData = {
             trust: 0,
             personality: ["成熟", "可靠", "温和", "有责任感"],
             hobbies: ["研究医学", "照顾他人", "园艺"],
-            portrait: "SuYunShen.png"
+            portrait: "SongYunshen.png"
         },
         唐言: {
             name: "唐言",

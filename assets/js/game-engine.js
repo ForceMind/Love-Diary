@@ -9,12 +9,40 @@ class LoveDiaryGame {
             },
             currentWeek: 1,
             currentDay: 1,
-            actionPoints: 2,
-            maxActionPoints: 2,
+            actionPoints: 5,
+            maxActionPoints: 5,
             characterRelationships: {},
             achievements: [],
             unlockedEndings: [],
-            currentEnding: null
+            currentEnding: null,
+            weekStats: {
+                study: 0,
+                social: 0,
+                leisure: 0,
+                encounter: 0
+            },
+            playerStats: {
+                学习: 50,
+                社交: 50,
+                心情: 50,
+                专注: 50,
+                计划性: 50,
+                条理: 50,
+                感性: 50,
+                理性: 50,
+                勇气: 50,
+                耐心: 50,
+                创造力: 50,
+                沟通: 50,
+                领导力: 50,
+                观察力: 50,
+                艺术: 50,
+                运动: 50,
+                健康: 50,
+                魅力: 50,
+                知识: 50,
+                经验: 50
+            }
         };
         
         this.selectedDay = null;
@@ -93,7 +121,7 @@ class LoveDiaryGame {
 
     autoLoadGame() {
         if (this.loadGame()) {
-            this.showModal('game-timeline-modal');
+            this.showGameScreen();
             this.showGameNotification('欢迎回来！游戏已自动加载', 'success');
         } else {
             this.showMainMenu();
@@ -124,6 +152,35 @@ class LoveDiaryGame {
                 specialEvents: []
             };
         });
+    }
+
+    updateCharacterRelationship(characterName, affectionChange, trustChange = 0) {
+        console.log(`=== 更新角色关系 ===`);
+        console.log(`角色: ${characterName}`);
+        console.log(`好感度变化: ${affectionChange}`);
+        console.log(`信任度变化: ${trustChange}`);
+        
+        if (!this.gameState.characterRelationships[characterName]) {
+            console.warn(`角色 ${characterName} 的关系数据不存在，将初始化`);
+            this.gameState.characterRelationships[characterName] = {
+                affection: 0,
+                trust: 0,
+                events: [],
+                specialEvents: []
+            };
+        }
+        
+        const relationship = this.gameState.characterRelationships[characterName];
+        const oldAffection = relationship.affection;
+        const oldTrust = relationship.trust;
+        
+        // 更新好感度和信任度，限制在0-100范围内
+        relationship.affection = Math.max(0, Math.min(100, relationship.affection + affectionChange));
+        relationship.trust = Math.max(0, Math.min(100, relationship.trust + trustChange));
+        
+        console.log(`好感度: ${oldAffection} -> ${relationship.affection}`);
+        console.log(`信任度: ${oldTrust} -> ${relationship.trust}`);
+        console.log(`=== 关系更新完成 ===`);
     }
 
     setupModalEventListeners() {
@@ -170,9 +227,7 @@ class LoveDiaryGame {
                 case 'load-game-modal':
                     this.loadSaveSlots();
                     break;
-                case 'game-timeline-modal':
-                    this.updateGameUI();
-                    break;
+                // 移除 game-timeline-modal 的处理，改用 showGameScreen
             }
         }
     }
@@ -188,11 +243,11 @@ class LoveDiaryGame {
     smartCloseModal(modalId) {
         this.closeModal(modalId);
         
-        // 如果游戏已经开始，关闭弹窗后应该回到时间线
-        if (this.gameState.player.name && modalId !== 'game-timeline-modal') {
+        // 如果游戏已经开始，关闭弹窗后应该回到游戏界面
+        if (this.gameState.player.name) {
             // 延迟一点时间确保关闭动画完成
             setTimeout(() => {
-                this.showModal('game-timeline-modal');
+                this.showGameScreen();
             }, 100);
         }
     }
@@ -303,23 +358,170 @@ class LoveDiaryGame {
     startGame(playerData) {
         this.gameState.player = playerData;
         this.closeModal('character-creation-modal');
-        this.showModal('game-timeline-modal');
+        this.showGameScreen();
         this.updateGameUI();
+    }
+    
+    showGameScreen() {
+        // 隐藏主菜单，显示游戏界面
+        const mainMenu = document.getElementById('main-menu');
+        const gameScreen = document.getElementById('game-screen');
+        
+        if (mainMenu) mainMenu.classList.remove('active');
+        if (gameScreen) gameScreen.classList.add('active');
+        
+        console.log('切换到游戏界面');
+    }
+    
+    returnToMenu() {
+        // 显示确认对话框
+        this.showGameConfirm(
+            '确定要返回主菜单吗？未保存的进度将会丢失！',
+            () => {
+                this.showMainMenu();
+            }
+        );
+    }
+    
+    showMainMenu() {
+        // 隐藏游戏界面，显示主菜单
+        const mainMenu = document.getElementById('main-menu');
+        const gameScreen = document.getElementById('game-screen');
+        
+        if (gameScreen) gameScreen.classList.remove('active');
+        if (mainMenu) mainMenu.classList.add('active');
+        
+        console.log('返回主菜单');
     }
 
     selectDay(day) {
+        console.log('selectDay 被调用，day:', day);
+        console.log('当前游戏状态:', this.gameState);
+        console.log('当前行动点数:', this.gameState.actionPoints);
+        
         if (this.gameState.actionPoints <= 0) {
-            this.showGameNotification('本周行动点数已用完！', 'warning');
+            console.log('行动点数不足，询问是否进入下一周');
+            this.askForNextWeek();
             return;
         }
         
+        console.log('开始执行日期选择逻辑...');
         this.selectedDay = day;
+        
+        // 消耗行动点数
+        this.gameState.actionPoints--;
+        console.log('消耗行动点，剩余:', this.gameState.actionPoints);
+        
+        // 更新统计数据
+        this.updateWeekStatsByActivity(day);
+        
+        // 更新UI
+        this.updateGameUI();
+        
         // 根据日期随机遇到角色，而不是让玩家选择
         this.randomEncounter(day);
+    }
+    
+    updateWeekStatsByActivity(day) {
+        const dayActivities = {
+            1: 'study', 2: 'social', 3: 'leisure', 4: 'social',
+            5: 'study', 6: 'leisure', 7: 'encounter'
+        };
+        
+        const activityType = dayActivities[day];
+        if (this.gameState.weekStats[activityType] !== undefined) {
+            this.gameState.weekStats[activityType]++;
+        }
+    }
+    
+    askForNextWeek() {
+        console.log('询问是否进入下一周');
+        
+        // 创建确认对话框
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        if (titleElement) titleElement.textContent = '本周行动结束';
+        
+        if (descElement) {
+            descElement.innerHTML = `
+                <div style="text-align: center;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">⏰</div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">
+                            本周的行动点数已经用完了！<br>
+                            你在这一周里度过了充实的校园生活。
+                        </p>
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 15px; border-radius: 8px;">
+                            <p style="color: #1976d2; font-weight: 500; margin: 0;">
+                                是否要进入下一周继续你的校园恋爱故事？
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 设置选择按钮
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const nextWeekBtn = document.createElement('button');
+            nextWeekBtn.className = 'choice-btn';
+            nextWeekBtn.textContent = '进入下一周';
+            nextWeekBtn.style.background = '#4caf50';
+            nextWeekBtn.addEventListener('click', () => {
+                this.closeModal('scenario-modal');
+                this.nextWeek();
+            });
+            
+            const stayBtn = document.createElement('button');
+            stayBtn.className = 'choice-btn';
+            stayBtn.textContent = '留在本周查看';
+            stayBtn.style.background = '#ff9800';
+            stayBtn.addEventListener('click', () => {
+                this.closeModal('scenario-modal');
+            });
+            
+            choicesElement.appendChild(nextWeekBtn);
+            choicesElement.appendChild(stayBtn);
+        }
+        
+        this.showModal('scenario-modal');
+    }
+    
+    nextWeek() {
+        // 检查是否有足够的进展进入下一周
+        if (this.gameState.actionPoints > 0) {
+            this.showGameNotification('本周还有行动点数，请先完成所有活动！', 'warning');
+            return;
+        }
+        
+        // 进入下一周
+        this.gameState.currentWeek++;
+        this.gameState.actionPoints = this.gameState.maxActionPoints;
+        
+        // 重置周统计
+        this.gameState.weekStats = {
+            study: 0, social: 0, leisure: 0, encounter: 0
+        };
+        
+        // 更新UI
+        this.updateGameUI();
+        
+        // 显示新周开始的提示
+        this.showGameNotification(`进入第${this.gameState.currentWeek}周！`, 'success');
+        
+        console.log('进入新的一周:', this.gameState.currentWeek);
     }
 
     // 随机遇到角色系统 - 增强版
     randomEncounter(day) {
+        console.log('=== randomEncounter 开始执行 ===');
+        console.log('日期:', day);
+        
         // 根据不同日期有不同的遇到概率和活动类型
         const dayActivities = {
             1: { type: '学习', characters: ['顾言', '江澈', '苏云深'] }, // 星期一：学习日
@@ -334,31 +536,53 @@ class LoveDiaryGame {
         const dayActivity = dayActivities[day];
         const activityType = dayActivity.type;
         
+        console.log('活动类型:', activityType);
+        console.log('可能遇到的角色:', dayActivity.characters);
+        
         // 从扩展数据中获取当前活动类型的场景
         const currentScenario = this.getRandomScenario(activityType);
         
+        console.log('获取到的场景:', currentScenario);
+        
         if (currentScenario) {
+            console.log('播放场景:', currentScenario.name || currentScenario.id);
             this.playScenario(currentScenario, activityType, dayActivity.characters);
         } else {
+            console.log('没有找到场景，使用回退逻辑');
             // 回退到原有的简单逻辑
             const availableCharacters = dayActivity.characters;
             const encounterChance = Math.random();
             
+            console.log('遇到概率:', encounterChance);
+            
             if (encounterChance > 0.3 && availableCharacters.length > 0) {
                 // 随机选择一个角色
                 const randomCharacter = availableCharacters[Math.floor(Math.random() * availableCharacters.length)];
+                console.log('遇到角色:', randomCharacter);
                 this.interactWithCharacter(randomCharacter);
             } else {
                 // 独自活动
+                console.log('独自活动');
                 this.soloActivity(activityType);
             }
         }
+        
+        console.log('=== randomEncounter 结束 ===');
     }
 
     // 获取随机场景
     getRandomScenario(activityType) {
+        console.log('=== getRandomScenario 开始 ===');
+        console.log('查找活动类型:', activityType);
+        console.log('gameData.scenarios:', gameData.scenarios);
+        
         const scenarios = gameData.scenarios[activityType];
-        if (!scenarios || scenarios.length === 0) return null;
+        console.log('找到的场景数组:', scenarios);
+        
+        if (!scenarios || scenarios.length === 0) {
+            console.log('没有找到场景或场景数组为空');
+            return null;
+        }
         
         // 过滤符合条件的场景
         const availableScenarios = scenarios.filter(scenario => {
@@ -485,18 +709,37 @@ class LoveDiaryGame {
             }
         }
 
-        this.openModal('scenario-modal');
+        this.showModal('scenario-modal');
     }
 
     // 处理场景选择
     handleScenarioChoice(choice, character, scenario) {
+        console.log('=== handleScenarioChoice 开始 ===');
+        console.log('选择内容:', choice);
+        console.log('角色:', character);
+        console.log('场景:', scenario);
+        
         // 应用效果
         if (choice.effect) {
+            console.log('开始应用效果:', choice.effect);
+            console.log('当前玩家状态:', this.gameState.playerStats);
+            
             Object.keys(choice.effect).forEach(attr => {
+                console.log(`处理属性: ${attr}, 值: ${choice.effect[attr]}`);
+                
                 if (this.gameState.playerStats[attr] !== undefined) {
+                    const oldValue = this.gameState.playerStats[attr];
                     this.gameState.playerStats[attr] = Math.max(0, 
                         Math.min(100, this.gameState.playerStats[attr] + choice.effect[attr])
                     );
+                    console.log(`${attr}: ${oldValue} -> ${this.gameState.playerStats[attr]}`);
+                } else {
+                    console.warn(`属性 ${attr} 在 playerStats 中不存在，将初始化为50`);
+                    // 如果属性不存在，初始化为50然后应用效果
+                    this.gameState.playerStats[attr] = Math.max(0, 
+                        Math.min(100, 50 + choice.effect[attr])
+                    );
+                    console.log(`新属性 ${attr} 初始化为: ${this.gameState.playerStats[attr]}`);
                 }
             });
         }
@@ -523,16 +766,29 @@ class LoveDiaryGame {
         
         // 消耗行动点
         this.gameState.actionPoints = Math.max(0, this.gameState.actionPoints - 1);
-        this.updateUI();
+        this.updateGameUI();
         
         // 检查是否触发特殊事件
         if (character) {
             this.checkSpecialEvents(character);
         }
+        
+        // 检查行动点数是否用完
+        if (this.gameState.actionPoints <= 0) {
+            setTimeout(() => {
+                this.askForNextWeek();
+            }, 2000); // 2秒后询问是否进入下一周
+        }
+        
+        console.log('=== handleScenarioChoice 结束 ===');
+        console.log('更新后的玩家状态:', this.gameState.playerStats);
     }
 
     // 独自活动
     soloActivity(activityType) {
+        console.log('=== soloActivity 开始 ===');
+        console.log('活动类型:', activityType);
+        
         const activities = {
             '学习': {
                 title: '独自学习',
@@ -557,40 +813,59 @@ class LoveDiaryGame {
         };
 
         const activity = activities[activityType];
+        console.log('活动内容:', activity);
         
         // 消耗行动点
         this.gameState.actionPoints--;
         
         // 显示独自活动结果
         this.showSoloActivityResult(activity);
+        
+        console.log('=== soloActivity 结束 ===');
     }
 
     showSoloActivityResult(activity) {
-        this.closeModal('game-timeline-modal');
+        console.log('=== showSoloActivityResult 开始 ===');
         
-        const modalContent = document.getElementById('scenario-content');
-        modalContent.innerHTML = `
-            <div style="text-align: center;">
-                <div style="font-size: 60px; margin-bottom: 20px;">🌸</div>
-                <h3 style="color: #ff6b9d; margin-bottom: 15px;">${activity.title}</h3>
-                
-                <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                    <p style="line-height: 1.6; color: #555;">${activity.description}</p>
-                </div>
-                
-                <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
-                    <h4 style="color: #2e7d32; margin-bottom: 10px;">💫 收获</h4>
-                    <p style="color: #4caf50; margin: 5px 0;">${activity.benefits}</p>
-                </div>
-                
+        // 设置场景弹窗的内容
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        if (titleElement) titleElement.textContent = activity.title;
+        
+        if (descElement) {
+            descElement.innerHTML = `
                 <div style="text-align: center;">
-                    <button onclick="game.continueGame()" style="margin-right: 10px;">继续游戏</button>
-                    <button onclick="game.returnToTimeline()">返回时间线</button>
+                    <div style="font-size: 60px; margin-bottom: 20px;">🌸</div>
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <p style="line-height: 1.6; color: #555; margin-bottom: 15px;">${activity.description}</p>
+                        <div style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); padding: 15px; border-radius: 8px;">
+                            <p style="color: #1976d2; font-weight: 500; margin: 0;">✨ ${activity.benefits}</p>
+                        </div>
+                    </div>
                 </div>
-            </div>
-        `;
+            `;
+        }
+        
+        // 设置选择按钮
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'choice-btn';
+            continueBtn.textContent = '继续';
+            continueBtn.addEventListener('click', () => {
+                this.continueGame();
+            });
+            
+            choicesElement.appendChild(continueBtn);
+        }
         
         this.showModal('scenario-modal');
+        
+        console.log('=== showSoloActivityResult 结束 ===');
     }
 
     loadCharacterSelection() {
@@ -625,12 +900,16 @@ class LoveDiaryGame {
     }
 
     interactWithCharacter(characterName) {
+        console.log('=== interactWithCharacter 开始 ===');
+        console.log('角色名称:', characterName);
+        
         if (this.gameState.actionPoints <= 0) {
-            this.showGameNotification('本周行动点数已用完！', 'warning');
+            this.askForNextWeek();
             return;
         }
 
         const relationship = this.gameState.characterRelationships[characterName];
+        console.log('角色关系数据:', relationship);
         
         // 从所有场景类型中查找涉及该角色的场景
         let allScenarios = [];
@@ -643,6 +922,8 @@ class LoveDiaryGame {
         // 筛选出与当前角色相关的场景
         const characterScenarios = allScenarios.filter(s => s.npc === characterName);
         let selectedScenario = null;
+        
+        console.log('找到的角色场景:', characterScenarios);
         
         if (characterScenarios.length > 0) {
             selectedScenario = characterScenarios[Math.floor(Math.random() * characterScenarios.length)];
@@ -658,39 +939,63 @@ class LoveDiaryGame {
         // 消耗行动点
         this.gameState.actionPoints--;
 
+        console.log('显示互动结果...');
         // 显示互动结果
         this.showInteractionResult(characterName, selectedScenario, affectionGain, trustGain);
 
         // 检查特殊事件
         this.checkSpecialEvents(characterName);
+        
+        // 检查行动点数是否用完
+        if (this.gameState.actionPoints <= 0) {
+            setTimeout(() => {
+                this.askForNextWeek();
+            }, 3000); // 3秒后询问是否进入下一周
+        }
+        
+        console.log('=== interactWithCharacter 结束 ===');
     }
 
     showInteractionResult(characterName, scenario, affectionGain, trustGain) {
-        this.closeModal('character-selection-modal');
+        console.log('=== showInteractionResult 开始 ===');
         
-        const modalContent = document.getElementById('scenario-content');
         const character = gameData.characters[characterName];
         const portraitPath = `assets/images/${character.portrait}`;
         
-        modalContent.innerHTML = `
-            <div style="text-align: center;">
-                <div class="character-portrait" style="margin: 0 auto 20px; width: 100px; height: 100px;">
-                    <img src="${portraitPath}" alt="${characterName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-                </div>
-                <h3 style="color: #ff6b9d; margin-bottom: 15px;">与 ${characterName} 的互动</h3>
-                
-                ${scenario ? `
-                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
-                        <h4 style="color: #333; margin-bottom: 10px;">${scenario.scene}</h4>
-                        <p style="line-height: 1.6; color: #555;">${scenario.dialogue}</p>
+        // 设置场景弹窗的内容
+        const modal = document.getElementById('scenario-modal');
+        const titleElement = modal.querySelector('.scenario-title');
+        const descElement = modal.querySelector('.scenario-description');
+        const choicesElement = modal.querySelector('.scenario-choices');
+        
+        if (titleElement) titleElement.textContent = `与 ${characterName} 的互动`;
+        
+        if (descElement) {
+            let content = `
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div class="character-portrait" style="margin: 0 auto 15px; width: 80px; height: 80px;">
+                        <img src="${portraitPath}" alt="${characterName}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;" onerror="this.style.display='none'">
                     </div>
-                ` : `
+                </div>
+            `;
+            
+            if (scenario) {
+                content += `
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
+                        <h4 style="color: #333; margin-bottom: 10px;">${scenario.scene || '互动场景'}</h4>
+                        <p style="line-height: 1.6; color: #555;">${scenario.dialogue || '你们进行了一次愉快的交流'}</p>
+                    </div>
+                `;
+            } else {
+                content += `
                     <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px;">
                         <p style="line-height: 1.6; color: #555;">你与${characterName}度过了愉快的时光，你们的关系变得更加亲密了。</p>
                     </div>
-                `}
-                
-                <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                `;
+            }
+            
+            content += `
+                <div style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8e8 100%); padding: 15px; border-radius: 10px;">
                     <h4 style="color: #2e7d32; margin-bottom: 10px;">💖 关系变化</h4>
                     <p style="color: #4caf50; margin: 5px 0;">好感度 +${affectionGain}</p>
                     <p style="color: #4caf50; margin: 5px 0;">信任度 +${trustGain}</p>
@@ -699,15 +1004,28 @@ class LoveDiaryGame {
                         信任度: ${this.gameState.characterRelationships[characterName].trust}
                     </p>
                 </div>
-                
-                <div style="text-align: center;">
-                    <button onclick="game.continueGame()" style="margin-right: 10px;">继续游戏</button>
-                    <button onclick="game.returnToTimeline()">返回时间线</button>
-                </div>
-            </div>
-        `;
+            `;
+            
+            descElement.innerHTML = content;
+        }
+        
+        // 设置选择按钮
+        if (choicesElement) {
+            choicesElement.innerHTML = '';
+            
+            const continueBtn = document.createElement('button');
+            continueBtn.className = 'choice-btn';
+            continueBtn.textContent = '继续游戏';
+            continueBtn.addEventListener('click', () => {
+                this.continueGame();
+            });
+            
+            choicesElement.appendChild(continueBtn);
+        }
         
         this.showModal('scenario-modal');
+        
+        console.log('=== showInteractionResult 结束 ===');
     }
 
     continueGame() {
@@ -715,8 +1033,8 @@ class LoveDiaryGame {
         
         // 检查是否还有行动点
         if (this.gameState.actionPoints > 0) {
-            // 直接回到时间线让玩家选择下一个活动
-            this.showModal('game-timeline-modal');
+            // 直接回到游戏界面让玩家选择下一个活动
+            this.showGameScreen();
             this.updateGameUI();
         } else {
             this.endWeek();
@@ -725,7 +1043,7 @@ class LoveDiaryGame {
 
     returnToTimeline() {
         this.closeModal('scenario-modal');
-        this.showModal('game-timeline-modal');
+        this.showGameScreen();
         this.updateGameUI();
     }
 
@@ -843,10 +1161,21 @@ class LoveDiaryGame {
 
     // 开始下一周
     startNextWeek() {
+        // 进入下一周，重置行动点数
+        this.gameState.currentWeek++;
+        this.gameState.actionPoints = this.gameState.maxActionPoints;
+        
+        // 重置周统计
+        this.gameState.weekStats = {
+            study: 0, social: 0, leisure: 0, encounter: 0
+        };
+        
+        this.showGameNotification(`进入第${this.gameState.currentWeek}周！`, 'success');
+        
         // 更新游戏界面
         this.updateGameUI();
-        // 显示时间线
-        this.showModal('game-timeline-modal');
+        // 显示游戏界面
+        this.showGameScreen();
     }
 
     endGame() {
@@ -883,7 +1212,7 @@ class LoveDiaryGame {
     }
 
     showEnding(ending) {
-        this.closeModal('game-timeline-modal');
+        // 不再需要关闭时间线弹窗，因为我们使用全屏界面
         
         const content = document.getElementById('ending-content');
         const character = ending.character ? gameData.characters[ending.character] : null;
@@ -922,6 +1251,58 @@ class LoveDiaryGame {
                 slot.classList.remove('disabled');
             }
         });
+        
+        // 更新周统计信息
+        this.updateWeekStats();
+        
+        // 更新好感度显示
+        this.updateAffectionStats();
+        
+        // 检查是否显示下一周按钮
+        this.checkNextWeekButton();
+    }
+    
+    updateWeekStats() {
+        const studyCount = document.getElementById('study-count');
+        const socialCount = document.getElementById('social-count');
+        const leisureCount = document.getElementById('leisure-count');
+        const encounterCount = document.getElementById('encounter-count');
+        
+        // 这里可以根据实际的游戏数据来更新统计
+        if (studyCount) studyCount.textContent = this.gameState.weekStats?.study || 0;
+        if (socialCount) socialCount.textContent = this.gameState.weekStats?.social || 0;
+        if (leisureCount) leisureCount.textContent = this.gameState.weekStats?.leisure || 0;
+        if (encounterCount) encounterCount.textContent = this.gameState.weekStats?.encounter || 0;
+    }
+    
+    updateAffectionStats() {
+        const affectionContainer = document.getElementById('affection-stats');
+        if (!affectionContainer) return;
+        
+        let html = '';
+        Object.keys(this.gameState.characterRelationships).forEach(character => {
+            const affection = this.gameState.characterRelationships[character].affection;
+            if (affection > 0) {
+                html += `<div>${character}: ${affection}点</div>`;
+            }
+        });
+        
+        if (html === '') {
+            html = '<div style="color: #6c757d;">暂无互动记录</div>';
+        }
+        
+        affectionContainer.innerHTML = html;
+    }
+    
+    checkNextWeekButton() {
+        const nextWeekBtn = document.getElementById('next-week-btn');
+        if (nextWeekBtn) {
+            if (this.gameState.actionPoints <= 0) {
+                nextWeekBtn.style.display = 'inline-block';
+            } else {
+                nextWeekBtn.style.display = 'none';
+            }
+        }
     }
 
     unlockAchievement(achievementId) {
@@ -1080,7 +1461,7 @@ class LoveDiaryGame {
                 saveSlot.addEventListener('click', () => {
                     if (this.loadGame()) {
                         this.closeModal('load-game-modal');
-                        this.showModal('game-timeline-modal');
+                        this.showGameScreen();
                     }
                 });
                 
@@ -1228,11 +1609,32 @@ function startGameFromCreation() {
 }
 
 function selectDay(day) {
+    if (!game) {
+        console.error('游戏未初始化，请刷新页面重试');
+        alert('游戏未初始化，请刷新页面重试');
+        return;
+    }
+    
+    console.log('选择日期:', day);
     game.selectDay(day);
 }
 
 function closeGameAndReturnToMenu() {
-    game.closeModal('game-timeline-modal');
+    if (game) {
+        game.returnToMenu();
+    }
+}
+
+function returnToMenu() {
+    if (game) {
+        game.returnToMenu();
+    }
+}
+
+function nextWeek() {
+    if (game) {
+        game.nextWeek();
+    }
 }
 
 function saveGame() {
@@ -1253,7 +1655,30 @@ function resetGameData() {
 
 // 初始化游戏
 let game;
+window.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM加载完成，开始初始化游戏...');
+    try {
+        game = new LoveDiaryGame();
+        console.log('游戏初始化完成！');
+        
+        // 确保游戏对象全局可用
+        window.game = game;
+    } catch (error) {
+        console.error('游戏初始化失败:', error);
+        alert('游戏初始化失败，请刷新页面重试');
+    }
+});
+
+// 备用初始化（确保兼容性）
 window.addEventListener('load', function() {
-    game = new LoveDiaryGame();
-    console.log('游戏初始化完成！');
+    if (!game) {
+        console.log('备用初始化启动...');
+        try {
+            game = new LoveDiaryGame();
+            window.game = game;
+            console.log('备用初始化完成！');
+        } catch (error) {
+            console.error('备用初始化失败:', error);
+        }
+    }
 });
