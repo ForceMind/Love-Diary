@@ -305,9 +305,12 @@ class LoveDiaryGame {
 
     // 弹窗管理
     showModal(modalId) {
+        console.log('显示弹窗:', modalId);
         const modal = document.getElementById(modalId);
+        console.log('找到弹窗元素:', modal);
         if (modal) {
             modal.classList.add('active');
+            console.log('弹窗已激活');
             
             // 根据不同弹窗加载相应内容
             switch(modalId) {
@@ -449,15 +452,23 @@ class LoveDiaryGame {
 
     // 游戏流程控制
     startGame(playerData) {
+        console.log('开始游戏，玩家数据:', playerData);
         this.gameState.player = playerData;
         // 初始化年级为大一
         this.gameState.player.grade = 1;
+        
+        console.log('当前游戏状态:');
+        console.log('currentWeek:', this.gameState.currentWeek);
+        console.log('actionPoints:', this.gameState.actionPoints);
+        
         this.closeModal('character-creation-modal');
         
         // 检查是否是新游戏，如果是则显示开场故事线
         if (this.gameState.currentWeek === 1 && this.gameState.actionPoints === 2) {
+            console.log('条件满足，显示新手引导');
             this.showIntroStoryline();
         } else {
+            console.log('条件不满足，直接进入游戏界面');
             this.showGameScreen();
             this.updateGameUI();
         }
@@ -515,17 +526,30 @@ class LoveDiaryGame {
             choicesElement.innerHTML = '';
             
             const startBtn = document.createElement('button');
-            startBtn.className = 'choice-btn';
+            // 不使用 choice-btn 类避免样式冲突
             startBtn.textContent = '开始我的校园生活！';
-            startBtn.style.background = 'linear-gradient(135deg, #ff6b9d 0%, #c44569 100%)';
-            startBtn.style.color = 'white';
-            startBtn.style.padding = '15px 25px';
-            startBtn.style.borderRadius = '25px';
-            startBtn.style.border = 'none';
-            startBtn.style.fontSize = '16px';
-            startBtn.style.fontWeight = '600';
-            startBtn.style.cursor = 'pointer';
-            startBtn.style.width = '100%';
+            
+            // 使用更强的内联样式确保可见性
+            startBtn.style.cssText = `
+                background: linear-gradient(135deg, #ff6b9d 0%, #c44569 100%) !important;
+                color: white !important;
+                padding: 15px 25px !important;
+                border-radius: 25px !important;
+                border: none !important;
+                font-size: 16px !important;
+                font-weight: 600 !important;
+                cursor: pointer !important;
+                width: 100% !important;
+                display: block !important;
+                visibility: visible !important;
+                opacity: 1 !important;
+                margin: 10px 0 !important;
+                text-align: center !important;
+                box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3) !important;
+                position: relative !important;
+                z-index: 10 !important;
+                overflow: visible !important;
+            `;
             startBtn.addEventListener('click', () => {
                 console.log('开始游戏按钮被点击');
                 this.closeModal('scenario-modal');
@@ -537,13 +561,26 @@ class LoveDiaryGame {
                 }, 1000);
             });
             
+            // 添加 hover 效果
+            startBtn.addEventListener('mouseenter', () => {
+                startBtn.style.transform = 'translateY(-2px)';
+                startBtn.style.boxShadow = '0 8px 20px rgba(255, 107, 157, 0.5)';
+            });
+            
+            startBtn.addEventListener('mouseleave', () => {
+                startBtn.style.transform = 'translateY(0)';
+                startBtn.style.boxShadow = '0 4px 15px rgba(255, 107, 157, 0.3)';
+            });
+            
             choicesElement.appendChild(startBtn);
-            console.log('按钮已添加到容器中');
+            console.log('主按钮已添加到容器中');
+            
         } else {
             console.error('未找到选择按钮容器');
         }
         
         this.showModal('scenario-modal');
+        console.log('新手引导设置完成，弹窗应该已显示');
     }
     
     // 第一天引导
