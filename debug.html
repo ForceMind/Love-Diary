@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Love Diary - 调试测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Love Diary 模块化系统调试</h1>
+    
+    <div class="test-section">
+        <h2>模块加载测试</h2>
+        <div id="module-loading-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>游戏数据测试</h2>
+        <button onclick="testGameData()">测试游戏数据</button>
+        <div id="gamedata-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>游戏引擎测试</h2>
+        <button onclick="testGameEngine()">测试游戏引擎</button>
+        <div id="engine-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>游戏逻辑测试</h2>
+        <button onclick="testGameLogic()">测试游戏逻辑</button>
+        <div id="logic-results"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>故事管理器测试</h2>
+        <button onclick="testStoryManager()">测试故事管理器</button>
+        <div id="story-results"></div>
+    </div>
+
+    <!-- 引入所有模块 -->
+    <script src="assets/js/data/GameData.js"></script>
+    <script src="assets/js/core/GameEngine.js"></script>
+    <script src="assets/js/core/GameLogic.js"></script>
+    <script src="assets/js/core/StoryManager.js"></script>
+    <script src="assets/js/LoveDiaryGame.js"></script>
+
+    <script>
+        // 模块加载检查
+        function checkModuleLoading() {
+            const results = document.getElementById('module-loading-results');
+            let html = '';
+            
+            const modules = [
+                { name: 'GameData', obj: window.GameData },
+                { name: 'GameEngine', obj: window.GameEngine },
+                { name: 'GameLogic', obj: window.GameLogic },
+                { name: 'StoryManager', obj: window.StoryManager },
+                { name: 'LoveDiaryGame', obj: window.LoveDiaryGame }
+            ];
+            
+            modules.forEach(module => {
+                if (module.obj) {
+                    html += `<div class="test-result success">✓ ${module.name} 加载成功</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ ${module.name} 加载失败</div>`;
+                }
+            });
+            
+            results.innerHTML = html;
+        }
+
+        // 测试游戏数据
+        function testGameData() {
+            const results = document.getElementById('gamedata-results');
+            let html = '';
+            
+            try {
+                if (GameData.characters && Object.keys(GameData.characters).length > 0) {
+                    html += `<div class="test-result success">✓ 角色数据加载成功，共 ${Object.keys(GameData.characters).length} 个角色</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ 角色数据为空</div>`;
+                }
+                
+                if (GameData.activities && GameData.activities.length > 0) {
+                    html += `<div class="test-result success">✓ 活动数据加载成功，共 ${GameData.activities.length} 个活动</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ 活动数据为空</div>`;
+                }
+                
+                if (GameData.storyData && GameData.storyData.first_meeting) {
+                    const storyCount = Object.keys(GameData.storyData.first_meeting).length;
+                    html += `<div class="test-result success">✓ 故事数据加载成功，共 ${storyCount} 个角色的初次相遇故事</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ 故事数据缺失</div>`;
+                }
+                
+            } catch (error) {
+                html += `<div class="test-result error">✗ 测试游戏数据时出错: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+
+        // 测试游戏引擎
+        function testGameEngine() {
+            const results = document.getElementById('engine-results');
+            let html = '';
+            
+            try {
+                const engine = new GameEngine();
+                
+                if (typeof engine.showModal === 'function') {
+                    html += `<div class="test-result success">✓ showModal 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ showModal 方法缺失</div>`;
+                }
+                
+                if (typeof engine.showNotification === 'function') {
+                    html += `<div class="test-result success">✓ showNotification 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ showNotification 方法缺失</div>`;
+                }
+                
+                if (typeof engine.saveGame === 'function') {
+                    html += `<div class="test-result success">✓ saveGame 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ saveGame 方法缺失</div>`;
+                }
+                
+            } catch (error) {
+                html += `<div class="test-result error">✗ 测试游戏引擎时出错: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+
+        // 测试游戏逻辑
+        function testGameLogic() {
+            const results = document.getElementById('logic-results');
+            let html = '';
+            
+            try {
+                const engine = new GameEngine();
+                const logic = new GameLogic(engine);
+                
+                if (logic.gameState) {
+                    html += `<div class="test-result success">✓ 游戏状态初始化成功</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ 游戏状态初始化失败</div>`;
+                }
+                
+                if (typeof logic.selectDay === 'function') {
+                    html += `<div class="test-result success">✓ selectDay 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ selectDay 方法缺失</div>`;
+                }
+                
+                if (typeof logic.updateCharacterRelationship === 'function') {
+                    html += `<div class="test-result success">✓ updateCharacterRelationship 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ updateCharacterRelationship 方法缺失</div>`;
+                }
+                
+            } catch (error) {
+                html += `<div class="test-result error">✗ 测试游戏逻辑时出错: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+
+        // 测试故事管理器
+        function testStoryManager() {
+            const results = document.getElementById('story-results');
+            let html = '';
+            
+            try {
+                const engine = new GameEngine();
+                const logic = new GameLogic(engine);
+                const storyManager = new StoryManager(logic, engine);
+                
+                if (typeof storyManager.startStory === 'function') {
+                    html += `<div class="test-result success">✓ startStory 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ startStory 方法缺失</div>`;
+                }
+                
+                if (typeof storyManager.showStoryRound === 'function') {
+                    html += `<div class="test-result success">✓ showStoryRound 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ showStoryRound 方法缺失</div>`;
+                }
+                
+                if (typeof storyManager.handleChoice === 'function') {
+                    html += `<div class="test-result success">✓ handleChoice 方法存在</div>`;
+                } else {
+                    html += `<div class="test-result error">✗ handleChoice 方法缺失</div>`;
+                }
+                
+            } catch (error) {
+                html += `<div class="test-result error">✗ 测试故事管理器时出错: ${error.message}</div>`;
+            }
+            
+            results.innerHTML = html;
+        }
+
+        // 页面加载完成后自动检查模块加载
+        document.addEventListener('DOMContentLoaded', function() {
+            checkModuleLoading();
+        });
+    </script>
+</body>
+</html>

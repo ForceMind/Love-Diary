@@ -32,11 +32,11 @@
                 <h2 class="game-subtitle">Love Diary</h2>
             </div>
             <div class="menu-buttons">
-                <button onclick="showCharacterCreation()">开始游戏</button>
-                <button onclick="showLoadGame()">读取存档</button>
-                <button onclick="showAchievements()">成就系统</button>
-                <button onclick="showGallery()">回忆相册</button>
-                <button onclick="showSettings()">设置</button>
+                <button id="new-game-btn">开始游戏</button>
+                <button id="continue-game-btn">继续游戏</button>
+                <button id="achievements-btn">成就系统</button>
+                <button id="gallery-btn">回忆相册</button>
+                <button id="settings-btn">设置</button>
                 <!-- 快速测试按钮已隐藏，如需测试请使用 test.html -->
             </div>
         </div>
@@ -100,37 +100,37 @@
                 <div class="calendar-container">
                     <h3 style="text-align: center; color: #ff6b9d; margin-bottom: 20px;">📅 选择一天进行活动</h3>
                     <div class="calendar-grid">
-                        <div class="day-slot" onclick="selectDay(1)" style="cursor: pointer;" title="点击进行星期一活动">
+                        <div class="day-slot" id="day-1" style="cursor: pointer;" title="点击进行星期一活动">
                             <div class="day-name">星期一</div>
                             <div class="day-icon">📚</div>
                             <div class="day-activity">学习</div>
                         </div>
-                        <div class="day-slot" onclick="selectDay(2)" style="cursor: pointer;" title="点击进行星期二活动">
+                        <div class="day-slot" id="day-2" style="cursor: pointer;" title="点击进行星期二活动">
                             <div class="day-name">星期二</div>
                             <div class="day-icon">🎨</div>
                             <div class="day-activity">社交</div>
                         </div>
-                        <div class="day-slot" onclick="selectDay(3)" style="cursor: pointer;" title="点击进行星期三活动">
+                        <div class="day-slot" id="day-3" style="cursor: pointer;" title="点击进行星期三活动">
                             <div class="day-name">星期三</div>
                             <div class="day-icon">🎵</div>
                             <div class="day-activity">休闲</div>
                         </div>
-                        <div class="day-slot" onclick="selectDay(4)" style="cursor: pointer;" title="点击进行星期四活动">
+                        <div class="day-slot" id="day-4" style="cursor: pointer;" title="点击进行星期四活动">
                             <div class="day-name">星期四</div>
                             <div class="day-icon">⚽</div>
                             <div class="day-activity">社交</div>
                         </div>
-                        <div class="day-slot" onclick="selectDay(5)" style="cursor: pointer;" title="点击进行星期五活动">
+                        <div class="day-slot" id="day-5" style="cursor: pointer;" title="点击进行星期五活动">
                             <div class="day-name">星期五</div>
                             <div class="day-icon">📖</div>
                             <div class="day-activity">学习</div>
                         </div>
-                        <div class="day-slot" onclick="selectDay(6)" style="cursor: pointer;" title="点击进行星期六活动">
+                        <div class="day-slot" id="day-6" style="cursor: pointer;" title="点击进行星期六活动">
                             <div class="day-name">星期六</div>
                             <div class="day-icon">🌸</div>
                             <div class="day-activity">休闲</div>
                         </div>
-                        <div class="day-slot" onclick="selectDay(7)" style="cursor: pointer;" title="点击进行星期日活动">
+                        <div class="day-slot" id="day-7" style="cursor: pointer;" title="点击进行星期日活动">
                             <div class="day-name">星期日</div>
                             <div class="day-icon">☕</div>
                             <div class="day-activity">偶遇</div>
@@ -160,9 +160,9 @@
                 
                 <!-- 游戏控制按钮 -->
                 <div class="game-controls">
-                    <button onclick="saveGame()" class="btn-save">💾 保存游戏</button>
-                    <button onclick="showModal('settings-modal')" class="btn-settings">⚙️ 游戏设置</button>
-                    <button onclick="returnToMenu()" class="btn-menu">🏠 返回主菜单</button>
+                    <button id="save-game-btn" class="btn-save">💾 保存游戏</button>
+                    <button id="settings-btn" class="btn-settings">⚙️ 游戏设置</button>
+                    <button id="back-to-menu-btn" class="btn-menu">🏠 返回主菜单</button>
                     <button onclick="nextWeek()" class="btn-next" id="next-week-btn" style="display: none;">⏭️ 下一周</button>
                 </div>
             </div>
@@ -199,7 +199,7 @@
                             <label><input type="radio" name="personality" value="感性"> 感性</label>
                         </div>
                     </div>
-                    <button onclick="startGameFromCreation()">确认创建</button>
+                    <button id="create-character-btn">确认创建</button>
                 </div>
             </div>
         </div>
@@ -324,8 +324,12 @@
         </div>
     </div>
 
-    <script src="assets/js/expanded-game-data.js"></script>
-    <script src="assets/js/game-engine.js"></script>
+    <!-- 引入新的模块化游戏文件 -->
+    <script src="assets/js/data/GameData.js"></script>
+    <script src="assets/js/core/GameEngine.js"></script>
+    <script src="assets/js/core/GameLogic.js"></script>
+    <script src="assets/js/core/StoryManager.js"></script>
+    <script src="assets/js/LoveDiaryGame.js"></script>
     
     <!-- 手机端UI控制脚本 -->
     <script>
@@ -344,7 +348,7 @@
             modal.classList.add('active');
             
             // 检查是否需要显示下一周按钮
-            if (window.game && window.game.gameState.actionPoints <= 0) {
+            if (window.game && window.game.logic.gameState.actionPoints <= 0) {
                 document.getElementById('mobile-next-week-btn').style.display = 'block';
             }
         }
@@ -362,52 +366,56 @@
         });
     </script>
     
-    <!-- 调试脚本 -->
+    <!-- 初始化游戏 -->
     <script>
-        // 添加全局调试函数
-        window.debugSelectDay = function(day) {
-            console.log('调试：点击日期', day);
-            console.log('game对象:', window.game);
-            console.log('typeof game:', typeof window.game);
+        // 全局游戏实例
+        let game;
+        
+        // 页面加载完成后初始化游戏
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始初始化游戏...');
             
-            if (!window.game) {
-                alert('游戏未初始化！请等待页面完全加载。');
-                return;
+            try {
+                // 创建游戏实例
+                game = new LoveDiaryGame();
+                
+                // 初始化游戏
+                game.init();
+                
+                console.log('游戏初始化成功');
+                
+            } catch (error) {
+                console.error('游戏初始化失败:', error);
+                alert('游戏初始化失败，请刷新页面重试。');
             }
-            
-            selectDay(day);
+        });
+        
+        // 调试功能
+        window.debugGame = function() {
+            console.log('=== 游戏调试信息 ===');
+            console.log('游戏实例:', game);
+            console.log('游戏状态:', game?.logic?.gameState);
+            console.log('引擎状态:', game?.engine);
+            console.log('GameData:', typeof GameData !== 'undefined' ? 'OK' : 'MISSING');
+            console.log('==================');
         };
         
         // 快速测试函数
-        window.testDirectGame = function() {
-            if (!window.game) {
-                alert('游戏未初始化！请刷新页面重试。');
+        window.quickStart = function() {
+            if (!game) {
+                alert('游戏未初始化！');
                 return;
             }
             
-            console.log('开始快速测试...');
-            
-            // 创建测试角色
             const testPlayer = {
                 name: "测试玩家",
-                major: "计算机科学",
+                major: "计算机科学", 
                 personality: "开朗"
             };
             
-            // 直接启动游戏
-            window.game.startGame(testPlayer);
-            
-            alert('测试模式启动！现在可以点击日期了。日期将直接在新界面中显示。');
+            game.logic.startGame(testPlayer);
+            console.log('快速开始测试游戏');
         };
-        
-        // 页面加载完成后的调试
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                console.log('页面加载完成，游戏状态检查:');
-                console.log('window.game:', window.game);
-                console.log('gameData:', typeof gameData !== 'undefined' ? 'OK' : 'MISSING');
-            }, 1000);
-        });
     </script>
 </body>
 </html>
