@@ -322,6 +322,42 @@ const GameData = {
         周奕辰: window.ZhouYichenStoryData
     },
 
+    // 新手引导剧情（3-5轮）
+    tutorialStory: {
+        1: {
+            description: "你带着对大学生活的憧憬，踏入了校园。迎面走来一位学姐，微笑着向你打招呼。",
+            dialogue: "欢迎来到大学！我是学生会的学姐，接下来我会带你简单了解校园生活。你叫什么名字呢？",
+            choices: [
+                { text: "自信地介绍自己", effect: {}, next: 2 },
+                { text: "有些紧张地报上名字", effect: {}, next: 2 }
+            ]
+        },
+        2: {
+            description: "学姐带你参观了教学楼、图书馆、食堂和体育馆。你对新环境充满好奇。",
+            dialogue: "大学里有很多有趣的活动和社团，你可以根据兴趣选择。遇到问题也可以随时来学生会找我哦！你最期待什么？",
+            choices: [
+                { text: "结识新朋友", effect: {}, next: 3 },
+                { text: "参加社团活动", effect: {}, next: 3 },
+                { text: "努力学习", effect: {}, next: 3 }
+            ]
+        },
+        3: {
+            description: "你在校园里遇见了几位性格各异的同学，有的热情，有的安静，有的神秘。",
+            dialogue: "大学生活才刚刚开始，每一天都会有新的故事。记得多尝试、多体验，勇敢追逐自己的梦想！准备好开启你的校园生活了吗？",
+            choices: [
+                { text: "我准备好了！", effect: {}, next: 4 },
+                { text: "还有点紧张……", effect: {}, next: 4 }
+            ]
+        },
+        4: {
+            description: "新手引导结束，你正式开启属于自己的大学篇章。",
+            dialogue: "加油！希望你在这里收获知识、友情和美好回忆。",
+            choices: [
+                { text: "开启校园生活", effect: {}, next: 'end' }
+            ]
+        }
+    },
+
     // 随机事件数据
     randomEvents: {
         weather: [

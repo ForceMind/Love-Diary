@@ -449,6 +449,9 @@ class GameLogic {
             if (random <= cumulativeChance) {
                 // 标记角色为已遇见
                 this.gameState.metCharacters.add(character);
+                if (this.gameState.characterMeetStatus[character]) {
+                    this.gameState.characterMeetStatus[character].met = true;
+                }
                 return character;
             }
         }
@@ -590,6 +593,9 @@ class GameLogic {
         if (isFirstMeeting) {
             // 第一次遇见，标记为已遇见
             this.gameState.metCharacters.add(characterName);
+            if (this.gameState.characterMeetStatus[characterName]) {
+                this.gameState.characterMeetStatus[characterName].met = true;
+            }
             // 使用第一次见面的故事类型
             this.storyManager.startStory(characterName, 'encounter', 'first_meeting', 1);
         } else {
@@ -1508,6 +1514,9 @@ class GameLogic {
     handleFirstEncounterChoice(characterName, choice) {
         // 标记角色为已遇见
         this.gameState.metCharacters.add(characterName);
+        if (this.gameState.characterMeetStatus[characterName]) {
+            this.gameState.characterMeetStatus[characterName].met = true;
+        }
         
         // 增加好感度
         if (choice.affection > 0) {

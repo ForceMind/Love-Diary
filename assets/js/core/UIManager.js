@@ -60,22 +60,23 @@ class UIManager {
         const container = document.getElementById('affection-stats');
         if (!container) return;
         const rels = this.logic.gameState.characterRelationships;
-        if (!rels) {
-            container.innerHTML = '<p style="color:#888;">暂无数据</p>';
-            return;
-        }
+            if (!rels) { 
+                container.innerHTML = '<p style="color:#888;">暂无数据</p>'; 
+                return; 
+            } 
         const metStatus = this.logic.gameState.characterMeetStatus || {};
         const filtered = Object.entries(rels).filter(([name]) => metStatus[name]?.met);
         if (filtered.length === 0) {
             container.innerHTML = '<p style="color:#888;">尚未与任何角色相遇</p>';
             return;
         }
-        container.innerHTML = filtered.map(([name, r]) => `
-            <div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #eee;font-size:13px;">
-                <span style="color:#555;">${name}</span>
-                <span style="color:#ff6b9d;">❤ ${r.affection} ｜ 🤝 ${r.trust}</span>
-            </div>
-        `).join('');
+            container.innerHTML = filtered.map(([name, r]) => { 
+                const cn = (window.GameData?.characterNameMapping?.[name]) || name; 
+                return `<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px dashed #eee;font-size:13px;"> 
+                    <span style="color:#555;">${cn}</span> 
+                    <span style="color:#ff6b9d;">❤ ${r.affection} ｜ 🤝 ${r.trust}</span> 
+                </div>`; 
+            }).join(''); 
     }
 
     updateNextWeekButtons() {
